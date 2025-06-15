@@ -1,15 +1,16 @@
 import 'package:animate_do/animate_do.dart';
-import 'package:checkdreamproperty/about.dart';
 import 'package:checkdreamproperty/contact.dart';
 import 'package:checkdreamproperty/head.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:carousel_slider/carousel_slider.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+
+import 'property_card.dart';
 
 void main() {
   runApp(const RealEstateApp());
@@ -50,7 +51,7 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedPropertyType = 'All Properties';
   String _selectedLocation = 'All Locations';
-  RangeValues _priceRange = const RangeValues(1000000, 10000000);
+  RangeValues _priceRange = const RangeValues(100000, 100000000);
 
   final List<String> _propertyTypes = [
     'All Properties',
@@ -345,10 +346,10 @@ class _HomePageState extends State<HomePage> {
     switch (_selectedIndex) {
       case 0:
         return _buildHomePage();
-      case 1:
-        return const AboutUsPage();
-      case 2:
-        return const ContactUsPage();
+      // case 1:
+      //   return const AboutUsPage();
+      // case 2:
+      //   return const ContactUsPage();
       default:
         return _buildHomePage();
     }
@@ -380,9 +381,21 @@ class _HomePageState extends State<HomePage> {
           // _buildHeroSection(),
           _buildSearchSection(),
           _buildFeaturedProperties(),
+          const SizedBox(
+            height: 20,
+          ),
+          const ContactUsPage()
         ],
       ),
     );
+  }
+
+  String _formatPrice(double value) {
+    if (value >= 10000000) {
+      return '₹${(value / 10000000).toStringAsFixed(2)} Cr';
+    } else {
+      return '₹${(value / 100000).toStringAsFixed(1)} L';
+    }
   }
 
   Widget _buildSearchSection() {
@@ -405,9 +418,8 @@ class _HomePageState extends State<HomePage> {
         children: [
           Text(
             'Find Your Perfect Property',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
               color: const Color(0xFF333333),
             ),
           ),
@@ -419,7 +431,7 @@ class _HomePageState extends State<HomePage> {
               color: Colors.grey[600],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 10),
 
           /// 🔍 Search Field
           _buildSearchField(
@@ -562,14 +574,9 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      FontAwesomeIcons.indianRupeeSign,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
                     Text(
                       'Budget Range',
                       style: GoogleFonts.poppins(
@@ -578,50 +585,52 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.grey,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildPriceTag(context,
-                          '₹${(_priceRange.start / 100000).toStringAsFixed(1)} L'),
-                      _buildPriceTag(context,
-                          '₹${(_priceRange.end / 100000).toStringAsFixed(1)} L'),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Theme.of(context).colorScheme.primary,
-                      inactiveTrackColor: Colors.grey.shade300,
-                      thumbColor: Theme.of(context).colorScheme.primary,
-                      overlayColor: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.2),
-                      thumbShape:
-                          const RoundSliderThumbShape(enabledThumbRadius: 12),
-                      trackHeight: 4,
-                    ),
-                    child: RangeSlider(
-                      values: _priceRange,
-                      min: 100000, // ₹1 Lac
-                      max: 200000000, // ₹50 Crores
-                      divisions:
-                          100, // ~₹5L steps (you can increase for finer control)
-                      labels: RangeLabels(
-                        '₹${(_priceRange.start / 100000).toStringAsFixed(1)} L',
-                        '₹${(_priceRange.end / 200000000).toStringAsFixed(1)} Cr',
+                    const SizedBox(height: 20),
+
+                    /// Price tags (below label)
+                    SizedBox(
+                      width: double.infinity,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildPriceTag(
+                              context, _formatPrice(_priceRange.start)),
+                          _buildPriceTag(
+                              context, _formatPrice(_priceRange.end)),
+                        ],
                       ),
-                      onChanged: (values) =>
-                          setState(() => _priceRange = values),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+
+                    /// Range Slider
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: Theme.of(context).colorScheme.primary,
+                        inactiveTrackColor: Colors.grey.shade300,
+                        thumbColor: Theme.of(context).colorScheme.primary,
+                        overlayColor: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.2),
+                        thumbShape:
+                            const RoundSliderThumbShape(enabledThumbRadius: 12),
+                        trackHeight: 4,
+                      ),
+                      child: RangeSlider(
+                        values: _priceRange,
+                        min: 100000, // ₹1 Lakh
+                        max: 200000000, // ₹20 Crore
+                        divisions: 100,
+                        labels: RangeLabels(
+                          _formatPrice(_priceRange.start),
+                          _formatPrice(_priceRange.end),
+                        ),
+                        onChanged: (values) {
+                          setState(() => _priceRange = values);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -732,6 +741,9 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
+          const SizedBox(
+            height: 20,
+          )
         ],
       ),
     );
@@ -804,45 +816,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildQuickStat(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-            size: 16,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildFeaturedProperties() {
     if (filteredProperties.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(10.0),
         child: Center(
           child: Column(
             children: [
@@ -865,9 +842,8 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 20),
         Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -876,21 +852,8 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     'Featured Properties',
                     style: GoogleFonts.playfairDisplay(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                       color: const Color(0xFF333333),
-                    ),
-                  ),
-                ),
-              ),
-              FadeInRight(
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'View All',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -898,10 +861,8 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-        const SizedBox(height: 10),
-        // Mobile-first responsive grid
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isMobile = constraints.maxWidth > 600;
@@ -912,10 +873,9 @@ class _HomePageState extends State<HomePage> {
               if (constraints.maxWidth > 900) {
                 crossAxisCount = 3;
               }
-
               return MasonryGridView.count(
                 crossAxisCount: crossAxisCount,
-                mainAxisSpacing: 16,
+                mainAxisSpacing: 8,
                 crossAxisSpacing: 16,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -952,789 +912,6 @@ class _HomePageState extends State<HomePage> {
         });
       }),
       body: _buildBody(),
-    );
-  }
-}
-
-class ImageGalleryPreview extends StatefulWidget {
-  final List<String> images;
-
-  const ImageGalleryPreview({super.key, required this.images});
-
-  @override
-  State<ImageGalleryPreview> createState() => _ImageGalleryPreviewState();
-}
-
-class _ImageGalleryPreviewState extends State<ImageGalleryPreview> {
-  late PageController _pageController;
-  int _currentIndex = 0;
-
-  @override
-  void initState() {
-    _pageController = PageController();
-    super.initState();
-  }
-
-  void _goToPrevious() {
-    if (_currentIndex > 0) {
-      _pageController.previousPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-    }
-  }
-
-  void _goToNext() {
-    if (_currentIndex < widget.images.length - 1) {
-      _pageController.nextPage(
-          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(12),
-      child: Stack(
-        children: [
-          Container(
-            width: double.infinity,
-            height: MediaQuery.of(context).size.height * 0.85,
-            color: Colors.black,
-            child: Stack(
-              children: [
-                PageView.builder(
-                  controller: _pageController,
-                  itemCount: widget.images.length,
-                  onPageChanged: (index) =>
-                      setState(() => _currentIndex = index),
-                  itemBuilder: (context, index) {
-                    return Center(
-                      child: Image.network(
-                        widget.images[index],
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return const CircularProgressIndicator();
-                        },
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image, color: Colors.white),
-                      ),
-                    );
-                  },
-                ),
-                // Left Arrow
-                if (_currentIndex > 0)
-                  Positioned(
-                    left: 10,
-                    top: MediaQuery.of(context).size.height * 0.35,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios,
-                          color: Colors.white, size: 32),
-                      onPressed: _goToPrevious,
-                    ),
-                  ),
-                // Right Arrow
-                if (_currentIndex < widget.images.length - 1)
-                  Positioned(
-                    right: 10,
-                    top: MediaQuery.of(context).size.height * 0.35,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios,
-                          color: Colors.white, size: 32),
-                      onPressed: _goToNext,
-                    ),
-                  ),
-                // Close Button
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-                // Indicator
-                Positioned(
-                  bottom: 10,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Text(
-                      '${_currentIndex + 1} / ${widget.images.length}',
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class YouTubeHelper {
-  static String? extractVideoId(String url) {
-    // Handle various YouTube URL formats
-    final regExp = RegExp(
-        r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})');
-    final match = regExp.firstMatch(url);
-    return match?.group(1);
-  }
-
-  static String getThumbnailUrl(String videoId) {
-    return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
-  }
-
-  static bool isYouTubeUrl(String url) {
-    return url.contains('youtube.com') || url.contains('youtu.be');
-  }
-}
-
-// Updated PropertyCard1 class with YouTube support
-class PropertyCard extends StatefulWidget {
-  final Map<String, dynamic> property;
-  final VoidCallback onPhonePressed;
-  final VoidCallback onWhatsAppPressed;
-  final VoidCallback onMapPressed;
-  final bool isMobile;
-
-  const PropertyCard(
-      {super.key,
-      required this.property,
-      required this.onPhonePressed,
-      required this.onWhatsAppPressed,
-      required this.onMapPressed,
-      required this.isMobile});
-
-  @override
-  State<PropertyCard> createState() => _PropertyCardState();
-}
-
-class _PropertyCardState extends State<PropertyCard>
-    with SingleTickerProviderStateMixin {
-  bool _isExpanded = false;
-  late AnimationController _controller;
-  late Animation<double> _expandAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 300));
-    _expandAnimation =
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-  }
-
-  void _toggleExpansion() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Widget _buildCarouselItem(String url) {
-    if (YouTubeHelper.isYouTubeUrl(url)) {
-      final videoId = YouTubeHelper.extractVideoId(url);
-      if (videoId != null) {
-        return Stack(
-          children: [
-            Image.network(
-              YouTubeHelper.getThumbnailUrl(videoId),
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Center(child: Icon(Icons.broken_image)),
-            ),
-            Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.8),
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(12),
-                child: const Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-            ),
-          ],
-        );
-      }
-    }
-
-    // Regular image
-    return Image.network(
-      url,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) =>
-          const Center(child: Icon(Icons.broken_image)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Carousel for Images and Videos
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-              child: SizedBox(
-                height: 180,
-                width: double.infinity,
-                child: CarouselSlider(
-                  options: CarouselOptions(
-                    viewportFraction: 1.0,
-                    autoPlay: true,
-                    autoPlayInterval: const Duration(seconds: 4),
-                    height: 180,
-                  ),
-                  items: (widget.property['images'] as List<String>)
-                      .map((url) => _buildCarouselItem(url))
-                      .toList(),
-                ),
-              ),
-            ),
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.property['title'],
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            widget.property['location'],
-                            style: const TextStyle(
-                                fontSize: 11, color: Colors.grey),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.property['forRent']
-                          ? '₹${widget.property['rentAmount']}/month'
-                          : '₹${(widget.property['price'] / 100000).toStringAsFixed(1)} Lakhs',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: [
-                        _buildPropertyDetail(Icons.straighten,
-                            '${widget.property['squareFeet']} sq.ft'),
-                        if (widget.property['bedrooms'] > 0)
-                          _buildPropertyDetail(
-                              Icons.bed, '${widget.property['bedrooms']} BHK'),
-                      ],
-                    ),
-                    AnimatedBuilder(
-                      animation: _expandAnimation,
-                      builder: (context, child) {
-                        return ClipRect(
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            heightFactor: _expandAnimation.value,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Divider(height: 16),
-                          if (widget.property['builtupArea'] > 0)
-                            _buildDetailRow('Built-up Area',
-                                '${widget.property['builtupArea']} sq.ft'),
-                          if (widget.property['grounds'] > 0)
-                            _buildDetailRow(
-                                'Grounds', '${widget.property['grounds']}'),
-                          _buildDetailRow(
-                              'Landmark', widget.property['landmark']),
-                          if (widget.property['waterTax'] > 0)
-                            _buildDetailRow('Water Tax',
-                                '₹${widget.property['waterTax']} / year'),
-                          if (widget.property['propertyTax'] > 0)
-                            _buildDetailRow('Property Tax',
-                                '₹${widget.property['propertyTax']} / year'),
-                          if (widget.property['bathrooms'] > 0)
-                            _buildDetailRow(
-                                'Bathrooms', '${widget.property['bathrooms']}'),
-                          if (widget.property['ageYears'] > 0)
-                            _buildDetailRow('Building Age',
-                                '${widget.property['ageYears']} years'),
-                          _buildDetailRow('Type', widget.property['type']),
-                          _buildDetailRow('City', widget.property['city']),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextButton(
-                      onPressed: _toggleExpansion,
-                      style: TextButton.styleFrom(
-                        minimumSize: Size.zero,
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _isExpanded
-                                ? 'Show Less Details'
-                                : 'Show More Details',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                          Icon(
-                            _isExpanded ? Icons.expand_less : Icons.expand_more,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const Spacer(),
-                          TextButton.icon(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) => MediaGalleryPreview(
-                                  mediaUrls: List<String>.from(
-                                      widget.property['images']),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.photo_library, size: 16),
-                            label: const Text('View All Media'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                 
-                    Row(
-                      children: [
-                        if (widget.property['mapLink'] != null &&
-                            widget.property['mapLink']
-                                .toString()
-                                .trim()
-                                .isNotEmpty)
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: widget.onMapPressed,
-                              icon: const Icon(Icons.location_on, size: 14),
-                              label: const Text('Map',
-                                  style: TextStyle(fontSize: 11)),
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor: Colors.blue,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 10),
-                                minimumSize: const Size(80, 36),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (widget.property['mapLink'] != null &&
-                            widget.property['mapLink']
-                                .toString()
-                                .trim()
-                                .isNotEmpty)
-                          const SizedBox(width: 6),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: widget.onPhonePressed,
-                            icon: const Icon(Icons.phone, size: 14),
-                            label: const Text('Phone',
-                                style: TextStyle(fontSize: 11)),
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.primary,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 10),
-                              minimumSize: const Size(80, 36),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: widget.onWhatsAppPressed,
-                            icon:
-                                const Icon(FontAwesomeIcons.whatsapp, size: 14),
-                            label: const Text('WhatsApp',
-                                style: TextStyle(fontSize: 11)),
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 10),
-                              minimumSize: const Size(
-                                  90, 36), // ensures space for long word
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPropertyDetail(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: Colors.grey),
-        const SizedBox(width: 4),
-        Text(text, style: const TextStyle(fontSize: 11)),
-      ],
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 11),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class MediaGalleryPreview extends StatefulWidget {
-  final List<String> mediaUrls;
-
-  const MediaGalleryPreview({super.key, required this.mediaUrls});
-
-  @override
-  State<MediaGalleryPreview> createState() => _MediaGalleryPreviewState();
-}
-
-class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
-  late PageController _pageController;
-  int _currentIndex = 0;
-  final Map<int, YoutubePlayerController> _youtubeControllers = {};
-
-  @override
-  void initState() {
-    _pageController = PageController();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _youtubeControllers.values) {
-      controller.close();
-    }
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  YoutubePlayerController _getYouTubeController(String videoId, int index) {
-    if (_youtubeControllers[index] != null) {
-      return _youtubeControllers[index]!;
-    }
-
-    final controller = YoutubePlayerController(
-      initialVideoId: videoId,
-      params: const YoutubePlayerParams(
-        autoPlay: false,
-        showControls: true,
-        showFullscreenButton: false,
-        enableCaption: true,
-        privacyEnhanced: true,
-      ),
-    );
-
-    _youtubeControllers[index] = controller;
-    return controller;
-  }
-
-  void _goToPrevious() {
-    if (_currentIndex > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
-  void _goToNext() {
-    if (_currentIndex < widget.mediaUrls.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
-  Widget _buildMediaItem(String url, int index) {
-    if (YouTubeHelper.isYouTubeUrl(url)) {
-      final videoId = YouTubeHelper.extractVideoId(url);
-      if (videoId != null) {
-        final controller = _getYouTubeController(videoId, index);
-        return Center(
-          child: Container(
-            // Constrain the YouTube player to a reasonable size
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width *
-                  0.85, // Leave space for nav buttons
-              maxHeight: MediaQuery.of(context).size.height * 0.6,
-            ),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: YoutubePlayerIFrame(controller: controller),
-              ),
-            ),
-          ),
-        );
-      }
-    }
-
-    // Regular image
-    return Center(
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.85,
-          maxHeight: MediaQuery.of(context).size.height * 0.7,
-        ),
-        child: Image.network(
-          url,
-          fit: BoxFit.contain,
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return const CircularProgressIndicator();
-          },
-          errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.broken_image, color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(12),
-      child: Container(
-        width: double.infinity,
-        height: MediaQuery.of(context).size.height * 0.85,
-        color: Colors.black,
-        child: Stack(
-          children: [
-            // Main content area with padding to avoid nav buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 60), // Space for nav buttons
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: widget.mediaUrls.length,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return _buildMediaItem(widget.mediaUrls[index], index);
-                },
-              ),
-            ),
-
-            // Previous button - positioned to be always accessible
-            if (_currentIndex > 0)
-              Positioned(
-                left: 10,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios,
-                          color: Colors.white, size: 32),
-                      onPressed: _goToPrevious,
-                    ),
-                  ),
-                ),
-              ),
-
-            // Next button - positioned to be always accessible
-            if (_currentIndex < widget.mediaUrls.length - 1)
-              Positioned(
-                right: 10,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios,
-                          color: Colors.white, size: 32),
-                      onPressed: _goToNext,
-                    ),
-                  ),
-                ),
-              ),
-
-            // Close button
-            Positioned(
-              top: 20,
-              right: 20,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ),
-            ),
-
-            // Media type indicator
-            Positioned(
-              top: 20,
-              left: 20,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      YouTubeHelper.isYouTubeUrl(
-                              widget.mediaUrls[_currentIndex])
-                          ? Icons.play_circle_outline
-                          : Icons.image,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      YouTubeHelper.isYouTubeUrl(
-                              widget.mediaUrls[_currentIndex])
-                          ? 'Video'
-                          : 'Image',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Page indicator
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '${_currentIndex + 1} / ${widget.mediaUrls.length}',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
