@@ -9,7 +9,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:http/http.dart' as http;
 
-import 'youtube_helper.dart';
+import '../models/youtube_helper.dart';
 
 class MediaGalleryPreview extends StatefulWidget {
   final List<String> mediaUrls;
@@ -149,6 +149,40 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
 
   @override
   Widget build(BuildContext context) {
+    // Handle empty media case
+    if (widget.mediaUrls.isEmpty) {
+      return Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.photo_library, 
+                  color: Colors.white70, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'No photos or videos available',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Close',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Dialog(
       backgroundColor: Colors.black,
       insetPadding: EdgeInsets.zero,
@@ -178,10 +212,87 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
                 }
               }
               return InteractiveViewer(
-                child: Image.network(url, fit: BoxFit.contain),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(Icons.broken_image,
+                          color: Colors.white70, size: 48),
+                    );
+                  },
+                ),
               );
             },
           ),
+
+          // Only show navigation controls if we have more than 1 item
+          if (widget.mediaUrls.length > 1) ...[
+            // Backward button
+            Positioned(
+              left: 10,
+              top: MediaQuery.of(context).size.height / 2 - 24,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios,
+                    color: Colors.white, size: 32),
+                onPressed: () {
+                  if (_currentIndex > 0) {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                },
+              ),
+            ),
+
+            // Forward button
+            Positioned(
+              right: 10,
+              top: MediaQuery.of(context).size.height / 2 - 24,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_forward_ios,
+                    color: Colors.white, size: 32),
+                onPressed: () {
+                  if (_currentIndex < widget.mediaUrls.length - 1) {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                },
+              ),
+            ),
+
+            // Page indicator
+            Positioned(
+              bottom: 40,
+              left: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_currentIndex + 1} / ${widget.mediaUrls.length}',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
 
           // Close button
           Positioned(
@@ -193,7 +304,7 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
             ),
           ),
 
-          // Download button for images
+          // Download button for images (only show if current item is not a YouTube video)
           if (!YouTubeHelper.isYouTubeUrl(widget.mediaUrls[_currentIndex]))
             Positioned(
               bottom: 40,
@@ -205,23 +316,6 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
                 child: const Icon(Icons.download, color: Colors.white),
               ),
             ),
-
-          // Page indicator
-          Positioned(
-            bottom: 40,
-            left: 20,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${_currentIndex + 1} / ${widget.mediaUrls.length}',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
         ],
       ),
     );
