@@ -1,137 +1,3 @@
-// import 'dart:io';
-// import 'package:http/http.dart' as http;
-
-// class UrlExpanderService {
-//   static const int maxRedirects = 10;
-  
-//   /// Expands a shortened URL by following redirects to get the final URL
-//   static Future<String?> expandUrl(String shortUrl) async {
-//     try {
-//       String currentUrl = shortUrl;
-//       int redirectCount = 0;
-      
-//       while (redirectCount < maxRedirects) {
-//         final client = http.Client();
-        
-//         try {
-//           // Make a HEAD request to avoid downloading the full content
-//           final request = http.Request('HEAD', Uri.parse(currentUrl));
-//           request.followRedirects = false; // We want to handle redirects manually
-          
-//           final streamedResponse = await client.send(request);
-//           final response = await http.Response.fromStream(streamedResponse);
-          
-//           // Check if it's a redirect response
-//           if (response.statusCode >= 300 && response.statusCode < 400) {
-//             final location = response.headers['location'];
-//             if (location != null) {
-//               // Handle relative URLs
-//               if (location.startsWith('/')) {
-//                 final uri = Uri.parse(currentUrl);
-//                 currentUrl = '${uri.scheme}://${uri.host}$location';
-//               } else if (!location.startsWith('http')) {
-//                 final uri = Uri.parse(currentUrl);
-//                 currentUrl = '${uri.scheme}://${uri.host}/${location}';
-//               } else {
-//                 currentUrl = location;
-//               }
-//               redirectCount++;
-//               continue;
-//             }
-//           }
-          
-//           // If we reach here, we either got a final response or no redirect
-//           break;
-          
-//         } finally {
-//           client.close();
-//         }
-//       }
-      
-//       // For Google Images URLs, we might need to extract the actual image URL
-//       if (currentUrl.contains('google.com') || currentUrl.contains('googleusercontent.com')) {
-//         return await _extractGoogleImageUrl(currentUrl);
-//       }
-      
-//       return currentUrl;
-      
-//     } catch (e) {
-//       print('Error expanding URL $shortUrl: $e');
-//       return null;
-//     }
-//   }
-  
-//   /// Extracts the actual image URL from Google Images redirect URLs
-//   static Future<String?> _extractGoogleImageUrl(String googleUrl) async {
-//     try {
-//       final client = http.Client();
-      
-//       try {
-//         final response = await client.get(Uri.parse(googleUrl));
-//         final html = response.body;
-        
-//         // Look for image URLs in the HTML
-//         final imageUrlPatterns = [
-//           RegExp(r'"(https://[^"]*\.(?:jpg|jpeg|png|gif|webp))"', caseSensitive: false),
-//           RegExp(r'src="(https://[^"]*\.(?:jpg|jpeg|png|gif|webp))"', caseSensitive: false),
-//           RegExp(r'url\((https://[^)]*\.(?:jpg|jpeg|png|gif|webp))\)', caseSensitive: false),
-//         ];
-        
-//         for (final pattern in imageUrlPatterns) {
-//           final match = pattern.firstMatch(html);
-//           if (match != null) {
-//             return match.group(1);
-//           }
-//         }
-        
-//         // If no direct image URL found, return the Google URL
-//         return googleUrl;
-        
-//       } finally {
-//         client.close();
-//       }
-      
-//     } catch (e) {
-//       print('Error extracting Google image URL: $e');
-//       return googleUrl;
-//     }
-//   }
-  
-//   /// Batch expand multiple URLs
-//   static Future<Map<String, String?>> expandUrls(List<String> urls) async {
-//     final Map<String, String?> results = {};
-    
-//     // Process URLs in parallel for better performance
-//     final futures = urls.map((url) async {
-//       final expanded = await expandUrl(url);
-//       return MapEntry(url, expanded);
-//     });
-    
-//     final expandedResults = await Future.wait(futures);
-    
-//     for (final entry in expandedResults) {
-//       results[entry.key] = entry.value;
-//     }
-    
-//     return results;
-//   }
-  
-//   /// Check if a URL is a shortened URL that needs expansion
-//   static bool needsExpansion(String url) {
-//     final shortenedDomains = [
-//       'goo.gl',
-//       'images.app.goo.gl',
-//       'bit.ly',
-//       't.co',
-//       'tinyurl.com',
-//       'short.link',
-//       'is.gd',
-//       'ow.ly',
-//     ];
-    
-//     return shortenedDomains.any((domain) => url.contains(domain));
-//   }
-// }
 
 
 import 'package:dio/dio.dart';
@@ -151,7 +17,6 @@ class DioUrlExpanderService {
       },
     );
     
-    // Add interceptor for logging (optional)
     _dio.interceptors.add(LogInterceptor(
       requestBody: false,
       responseBody: false,
@@ -162,7 +27,6 @@ class DioUrlExpanderService {
     ));
   }
 
-  /// Expands a shortened URL by following redirects to get the final URL
   static Future<String?> expandUrl(String shortUrl) async {
     _configureDio();
     
@@ -230,13 +94,10 @@ class DioUrlExpanderService {
             }
           }
           
-          // If it's not a redirect error, break and return current URL
           print('Dio error expanding URL $currentUrl: ${e.message}');
           break;
         }
       }
-      
-      // For Google Images URLs, we might need to extract the actual image URL
       if (currentUrl.contains('google.com') || currentUrl.contains('googleusercontent.com')) {
         return await _extractGoogleImageUrl(currentUrl);
       }

@@ -25,17 +25,30 @@ class RealEstateApp extends StatelessWidget {
     return MaterialApp(
       title: 'Check Dream Property',
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
-        primaryColor: const Color(0xFFFF6B00), // Orange
-        scaffoldBackgroundColor: Colors.white,
-        cardColor: Colors.white,
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: const Color.fromRGBO(239, 131, 23, 1),
-          secondary: const Color(0xFF333333),
-          background: Colors.white,
-        ),
-      ),
+  scaffoldBackgroundColor: const Color(0xFFF2F2F2), // Light gray background
+  cardColor: Colors.white, // Default card color
+  useMaterial3: false, // Disable Material 3 for stronger shadows
+  textTheme: GoogleFonts.poppinsTextTheme(),
+  colorScheme: const ColorScheme.light(
+    primary: Color(0xFFFF6B00), // Orange
+    background: Colors.white,
+    surface: Colors.white, // Most important for cards
+    onSurface: Colors.black,
+  ),
+  cardTheme: CardTheme(
+    color: Colors.white,
+    elevation: 4,
+    margin: EdgeInsets.zero,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    shadowColor: Colors.black.withOpacity(0.2), // Custom shadow
+    surfaceTintColor: Colors.white, // Ensure no tint
+  ),
+),
+
       home: const HomePage(),
     );
   }

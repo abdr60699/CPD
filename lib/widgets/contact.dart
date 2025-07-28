@@ -16,7 +16,6 @@ class ContactUsPage extends StatelessWidget {
         children: [
           // Hero Section
           FadeIn(
-            duration: const Duration(seconds: 1),
             child: Container(
               height: 250,
               width: double.infinity,
@@ -40,9 +39,9 @@ class ContactUsPage extends StatelessWidget {
                   ),
                 ),
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                       FadeInDown(
                         delay: const Duration(milliseconds: 300),
                         child: Text(
@@ -79,7 +78,7 @@ class ContactUsPage extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                    ],
+                  ],
                   ),
                 ),
               ),
@@ -290,9 +289,9 @@ class ContactUsPage extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 5),
-              Text(content,
+              SelectableText(content,
                   style: TextStyle(
-                      fontSize: 14, color: Colors.grey.shade700, height: 1.5)),
+                      fontSize: 12, color: Colors.grey.shade700, height: 1.5)),
             ],
           ),
         ),

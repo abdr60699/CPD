@@ -1,9 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-
 import 'utils/web_utils.dart';
+
 PreferredSizeWidget buildResponsiveAppBar(
     BuildContext context, int selectedIndex, Function(int) onItemSelected) {
   final isMobile = MediaQuery.of(context).size.width < 600;
@@ -11,7 +9,7 @@ PreferredSizeWidget buildResponsiveAppBar(
   return AppBar(
     surfaceTintColor: Colors.transparent,
     backgroundColor: Colors.white,
-    elevation: 0,
+    elevation: 4,
     title: Row(
       children: [
         Padding(
@@ -56,7 +54,6 @@ PreferredSizeWidget buildResponsiveAppBar(
     ),
   );
 }
-
 
 Widget _buildNavItem(BuildContext context, String title, int index,
     int selectedIndex, Function(int) onTap) {

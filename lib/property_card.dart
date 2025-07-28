@@ -33,7 +33,7 @@ class _PropertyCardState extends State<PropertyCard>
   late Animation<double> _expandAnimation;
 
   final Map<String, String?> _expandedUrlCache = {};
-  final Map<String, bool> _urlExpansionStatus = {}; 
+  final Map<String, bool> _urlExpansionStatus = {};
   bool _isExpandingUrls = false;
   int _expandedCount = 0;
   int _totalUrlsToExpand = 0;
@@ -50,41 +50,43 @@ class _PropertyCardState extends State<PropertyCard>
     _expandImageUrls();
   }
 
-
-    Future<void> _expandImageUrls() async {
+  Future<void> _expandImageUrls() async {
     final images = getListValue('images');
-    final imageUrls = images.map((e) => e.toString()).where((url) => url.isNotEmpty).toList();
-    
+    final imageUrls =
+        images.map((e) => e.toString()).where((url) => url.isNotEmpty).toList();
+
     if (imageUrls.isEmpty) return;
-    
+
     // Initialize expansion status for all URLs
     for (final url in imageUrls) {
       if (!_urlExpansionStatus.containsKey(url)) {
         _urlExpansionStatus[url] = DioUrlExpanderService.needsExpansion(url);
       }
     }
-    
+
     // Check which URLs need expansion
-    final urlsToExpand = imageUrls.where((url) => 
-      DioUrlExpanderService.needsExpansion(url) && !_expandedUrlCache.containsKey(url)
-    ).toList();
-    
+    final urlsToExpand = imageUrls
+        .where((url) =>
+            DioUrlExpanderService.needsExpansion(url) &&
+            !_expandedUrlCache.containsKey(url))
+        .toList();
+
     if (urlsToExpand.isEmpty) return;
-    
+
     setState(() {
       _isExpandingUrls = true;
       _expandedCount = 0;
       _totalUrlsToExpand = urlsToExpand.length;
     });
-    
+
     try {
       // Process URLs individually to update UI progressively
       for (int i = 0; i < urlsToExpand.length; i++) {
         final url = urlsToExpand[i];
-        
+
         try {
           final expandedUrl = await DioUrlExpanderService.expandUrl(url);
-          
+
           if (mounted) {
             setState(() {
               _expandedUrlCache[url] = expandedUrl;
@@ -92,7 +94,7 @@ class _PropertyCardState extends State<PropertyCard>
               _expandedCount = i + 1;
             });
           }
-          
+
           // Small delay to prevent overwhelming the UI
           if (i < urlsToExpand.length - 1) {
             await Future.delayed(const Duration(milliseconds: 100));
@@ -102,13 +104,14 @@ class _PropertyCardState extends State<PropertyCard>
           if (mounted) {
             setState(() {
               _expandedUrlCache[url] = url; // Fallback to original URL
-              _urlExpansionStatus[url] = false; // Mark as completed (with fallback)
+              _urlExpansionStatus[url] =
+                  false; // Mark as completed (with fallback)
               _expandedCount = i + 1;
             });
           }
         }
       }
-      
+
       if (mounted) {
         setState(() {
           _isExpandingUrls = false;
@@ -150,12 +153,12 @@ class _PropertyCardState extends State<PropertyCard>
   /// Test URL accessibility and get info
   Future<void> _testUrl(String url) async {
     final info = await DioUrlExpanderService.getUrlInfo(url);
-    print('URL Info for $url: $info');
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('URL Test: ${info['isAccessible'] ? 'Success' : 'Failed'}'),
+          content:
+              Text('URL Test: ${info['isAccessible'] ? 'Success' : 'Failed'}'),
           backgroundColor: info['isAccessible'] ? Colors.green : Colors.red,
         ),
       );
@@ -165,12 +168,12 @@ class _PropertyCardState extends State<PropertyCard>
   Widget _buildCarouselItem(String originalUrl) {
     final expandedUrl = _getExpandedUrl(originalUrl);
     final isBeingExpanded = _isUrlBeingExpanded(originalUrl);
-    
+
     // Show loading indicator if URL is being expanded
     if (isBeingExpanded) {
       return Container(
         width: double.infinity,
-        height: 180,
+        height: 230,
         color: Colors.grey[100],
         child: Center(
           child: Column(
@@ -191,8 +194,8 @@ class _PropertyCardState extends State<PropertyCard>
               ),
               const SizedBox(height: 8),
               Text(
-                originalUrl.length > 30 
-                    ? '${originalUrl.substring(0, 30)}...' 
+                originalUrl.length > 30
+                    ? '${originalUrl.substring(0, 30)}...'
                     : originalUrl,
                 style: TextStyle(
                   color: Colors.grey[500],
@@ -248,8 +251,6 @@ class _PropertyCardState extends State<PropertyCard>
         fit: BoxFit.cover,
         loadingBuilder: _buildImageLoadingBuilder,
         errorBuilder: (context, error, stackTrace) {
-          print('Image loading error for URL: $expandedUrl (original: $originalUrl)');
-          print('Error: $error');
           return _buildImageErrorWidget(originalUrl, expandedUrl);
         },
       );
@@ -271,9 +272,10 @@ class _PropertyCardState extends State<PropertyCard>
     );
   }
 
-  Widget _buildImageLoadingBuilder(BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+  Widget _buildImageLoadingBuilder(
+      BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
     if (loadingProgress == null) return child;
-    
+
     return Container(
       width: double.infinity,
       height: 180,
@@ -342,41 +344,10 @@ class _PropertyCardState extends State<PropertyCard>
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'Original: ${originalUrl.length > 25 ? originalUrl.substring(0, 25) + '...' : originalUrl}',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 11,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (expandedUrl != originalUrl) ...[
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Expanded: ${expandedUrl.length > 25 ? expandedUrl.substring(0, 25) + '...' : expandedUrl}',
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 11,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: () => _testUrl(expandedUrl),
             icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Test URL'),
+            label: const Text('Retry'),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(100, 32),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -390,11 +361,12 @@ class _PropertyCardState extends State<PropertyCard>
 
   Widget _buildImageCarousel() {
     final images = getListValue('images');
-    final imageStrings = images.map((e) => e.toString()).where((url) => url.isNotEmpty).toList();
+    final imageStrings =
+        images.map((e) => e.toString()).where((url) => url.isNotEmpty).toList();
 
     if (imageStrings.isEmpty) {
       return Container(
-        height: 180,
+        height: 250,
         width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.grey[200],
@@ -433,12 +405,14 @@ class _PropertyCardState extends State<PropertyCard>
             CarouselSlider(
               options: CarouselOptions(
                 viewportFraction: 1.0,
-                autoPlay: !_isExpandingUrls && !_hasUrlsBeingExpanded(), // Don't auto-play while expanding URLs
+                autoPlay: !_isExpandingUrls &&
+                    !_hasUrlsBeingExpanded(), // Don't auto-play while expanding URLs
                 autoPlayInterval: const Duration(seconds: 4),
                 height: 180,
                 enableInfiniteScroll: imageStrings.length > 1,
               ),
-              items: imageStrings.map((url) => _buildCarouselItem(url)).toList(),
+              items:
+                  imageStrings.map((url) => _buildCarouselItem(url)).toList(),
             ),
             // Overall progress indicator
             if (_isExpandingUrls || _hasUrlsBeingExpanded())
@@ -446,7 +420,8 @@ class _PropertyCardState extends State<PropertyCard>
                 top: 12,
                 right: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(16),
@@ -459,13 +434,16 @@ class _PropertyCardState extends State<PropertyCard>
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          value: _totalUrlsToExpand > 0 ? _expandedCount / _totalUrlsToExpand : null,
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                          value: _totalUrlsToExpand > 0
+                              ? _expandedCount / _totalUrlsToExpand
+                              : null,
+                          valueColor:
+                              const AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _isExpandingUrls 
+                        _isExpandingUrls
                             ? 'Processing... ($_expandedCount/$_totalUrlsToExpand)'
                             : 'Loading...',
                         style: const TextStyle(
@@ -484,7 +462,8 @@ class _PropertyCardState extends State<PropertyCard>
                 bottom: 12,
                 right: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(12),
@@ -558,13 +537,11 @@ class _PropertyCardState extends State<PropertyCard>
     });
   }
 
-
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -612,9 +589,11 @@ class _PropertyCardState extends State<PropertyCard>
     }
 
     return Card(
-      color: Colors.grey[200],
+      color: Colors
+          .white, // Pure white instead of Color.fromARGB(255, 250, 247, 247)
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
+      elevation: 8, // Reduce elevation for subtler shadow
+      shadowColor: Colors.black.withOpacity(0.4), // Enhanced shadow visibility
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -750,18 +729,34 @@ class _PropertyCardState extends State<PropertyCard>
                           onPressed: _toggleExpansion,
                           style: TextButton.styleFrom(
                             minimumSize: Size.zero,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 6,
-                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 6),
                           ),
-                          child: Text(
-                            _isExpanded
-                                ? 'Show Less Details'
-                                : 'Show More Details',
-                            style: TextStyle(
-                              fontSize: smallTextFontSize,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _isExpanded
+                                    ? 'Show Less Details'
+                                    : 'Show More Details',
+                                style: TextStyle(
+                                  fontSize: smallTextFontSize,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              const SizedBox(
+                                  width: 4), // spacing between text and icon
+                              Icon(
+                                _isExpanded
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
+                                size: smallIconSize,
+                                color: Colors.blue,
+                                semanticLabel: _isExpanded
+                                    ? 'Show Less Details'
+                                    : 'Show More Details',
+                                textDirection: TextDirection.ltr,
+                              ),
+                            ],
                           ),
                         ),
                         if (images.isNotEmpty)
@@ -783,14 +778,19 @@ class _PropertyCardState extends State<PropertyCard>
                               padding: const EdgeInsets.symmetric(
                                   vertical: 6, horizontal: 8),
                             ),
-                            icon:
-                                Icon(Icons.photo_library, size: smallIconSize),
+                            icon: Icon(
+                              Icons.photo_library,
+                              size: smallIconSize,
+                              color: Colors.blue,
+                            ),
                             label: Text('View All Media',
-                                style: TextStyle(fontSize: smallTextFontSize)),
+                                style: TextStyle(
+                                    fontSize: smallTextFontSize,
+                                    color: Colors.blue)),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         SizedBox(

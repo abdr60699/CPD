@@ -1,93 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// class PropertyService {
-//   final SupabaseClient _supabase = Supabase.instance.client;
-
-//   // Fetch all properties from Supabase
-//   Future<List<Map<String, dynamic>>> fetchProperties() async {
-//     try {
-//       final response = await _supabase
-//           .from('cpd')
-//           .select('id, property_data, created_at')
-//           .order('created_at', ascending: false);
-
-//       print('Raw response: $response');
-
-//       return response.map<Map<String, dynamic>>((item) {
-//         final propertyData = Map<String, dynamic>.from(item['property_data']);
-//         propertyData['id'] = item['id']; // add id
-//         propertyData['created_at'] = item['created_at']; 
-//      print('propertyData: $propertyData');
-//         return propertyData;
-//       }).toList();
-//     } catch (e) {
-//       print('Error fetching properties: $e');
-//       return [];
-//     }
-//   }
-
-//   Future<bool> addProperty(Map<String, dynamic> propertyData) async {
-//     try {
-//       final result = await _supabase.from('cpd').insert({
-//         'property_data': propertyData,
-//         'created_at': DateTime.now().toIso8601String(),
-//       }).select();
-
-//       print('Insert result: $result');
-//       return true;
-//     } catch (e) {
-//       print('Error adding property: $e');
-//       return false;
-//     }
-//   }
-
-//   // Update existing property
-//   Future<bool> updateProperty(int id, Map<String, dynamic> propertyData) async {
-//     try {
-//       await _supabase
-//           .from('cpd')  // Changed from 'properties' to 'cpd'
-//           .update({'property_data': propertyData})
-//           .eq('id', id);
-//       return true;
-//     } catch (e) {
-//       print('Error updating property: $e');
-//       return false;
-//     }
-//   }
-
-//   // Delete property
-//   Future<bool> deleteProperty(int id) async {
-//     try {
-//       await _supabase.from('cpd').delete().eq('id', id);  // Changed from 'properties' to 'cpd'
-//       return true;
-//     } catch (e) {
-//       print('Error deleting property: $e');
-//       return false;
-//     }
-//   }
-
-//   // Helper method to delete image from storage when property is deleted
-//   Future<bool> deleteImage(String imageUrl) async {
-//     try {
-//       // Extract file path from URL
-//       final uri = Uri.parse(imageUrl);
-//       final pathSegments = uri.pathSegments;
-//       final fileName = pathSegments.last;
-//       final filePath = 'property_images/$fileName';
-      
-//       await _supabase.storage
-//           .from('property-images')
-//           .remove([filePath]);
-      
-//       return true;
-//     } catch (e) {
-//       print('Error deleting image: $e');
-//       return false;
-//     }
-//   }
-// }
-
-
 class PropertyService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
@@ -152,8 +64,7 @@ class PropertyService {
             contact['whatsapp'] = contact['phone'] ?? '';
           }
         }
-        
-        print('Processed property: ${propertyData['title']} - ID: ${propertyData['main_id']}');
+
         return propertyData;
       }).toList();
     } catch (e) {
