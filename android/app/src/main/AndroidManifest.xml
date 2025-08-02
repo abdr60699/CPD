@@ -14,6 +14,7 @@
     <application
         android:label="checkdreamproperty"
         android:name="androidx.multidex.MultiDexApplication"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

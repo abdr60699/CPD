@@ -1,8 +1,8 @@
 class YouTubeHelper {
   static String? extractVideoId(String url) {
-    // Handle various YouTube URL formats
+    // Handle various YouTube URL formats including shorts
     final regExp = RegExp(
-        r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})');
+        r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})');
     final match = regExp.firstMatch(url);
     return match?.group(1);
   }

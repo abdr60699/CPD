@@ -27,15 +27,17 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
 
   @override
   void initState() {
-    _pageController = PageController();
     super.initState();
+    _pageController = PageController();
   }
 
   @override
   void dispose() {
+    // Properly dispose all YouTube controllers
     for (var controller in _youtubeControllers.values) {
       controller.close();
     }
+    _youtubeControllers.clear();
     _pageController.dispose();
     super.dispose();
   }
@@ -45,19 +47,38 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
       return _youtubeControllers[index]!;
     }
 
-    final controller = YoutubePlayerController(
-      initialVideoId: videoId,
-      params: const YoutubePlayerParams(
-        autoPlay: false,
-        showControls: true,
-        showFullscreenButton: false,
-        enableCaption: true,
-        privacyEnhanced: true,
-      ),
-    );
+    try {
+      final controller = YoutubePlayerController(
+        initialVideoId: videoId,
+        params: const YoutubePlayerParams(
+          autoPlay: true, // Changed to true for better UX
+          showControls: true,
+          showFullscreenButton: true,
+          enableCaption: false, // Disable to reduce loading issues
+          privacyEnhanced: false, // Disable to reduce loading issues
+          playsInline: true, // Keep inline for better mobile experience
+          mute: false,
+          loop: false,
+          enableJavaScript: true,
+        ),
+      );
 
-    _youtubeControllers[index] = controller;
-    return controller;
+      _youtubeControllers[index] = controller;
+      return controller;
+    } catch (e) {
+      print('Error creating YouTube controller: $e');
+      rethrow; // Re-throw to be caught by the calling method
+    }
+  }
+
+  // Handle controller cleanup when page changes
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+
+    // Don't pause other videos - let user control playback
+    // The previous approach of pausing other videos was causing issues
   }
 
   Future<void> downloadToGallery(String imageUrl, BuildContext context) async {
@@ -147,6 +168,130 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
     return false;
   }
 
+  Widget _buildMediaItem(int index) {
+    final url = widget.mediaUrls[index];
+
+    if (YouTubeHelper.isYouTubeUrl(url)) {
+      final videoId = YouTubeHelper.extractVideoId(url);
+      if (videoId != null) {
+        try {
+          final controller = _getYouTubeController(videoId, index);
+
+          return Container(
+            color: Colors.black,
+            child: Center(
+              child: YoutubePlayerIFrame(
+                controller: controller,
+              ),
+            ),
+          );
+        } catch (e) {
+          print('Error creating YouTube player: $e');
+          // Fallback to show thumbnail with external link option
+          return Container(
+            color: Colors.black,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.network(
+                    YouTubeHelper.getThumbnailUrl(videoId),
+                    width: 300,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.video_library,
+                      color: Colors.white70,
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'YouTube Player Not Available',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // You can add url_launcher here to open in browser
+                      print('Open YouTube URL: $url');
+                    },
+                    icon: const Icon(Icons.open_in_browser),
+                    label: const Text('Open in Browser'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+      } else {
+        // Invalid YouTube URL
+        return const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, color: Colors.white70, size: 48),
+              SizedBox(height: 16),
+              Text(
+                'Invalid YouTube URL',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      // Regular image
+      return InteractiveViewer(
+        child: Image.network(
+          url,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded /
+                            loadingProgress.expectedTotalBytes!
+                        : null,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Loading image...',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.broken_image, color: Colors.white70, size: 48),
+                  SizedBox(height: 16),
+                  Text(
+                    'Failed to load image',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Handle empty media case
@@ -159,10 +304,9 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.photo_library, 
-                  color: Colors.white70, size: 48),
+              const Icon(Icons.photo_library, color: Colors.white70, size: 48),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'No photos or videos available',
                 style: TextStyle(
                   color: Colors.white70,
@@ -192,50 +336,8 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
           PageView.builder(
             controller: _pageController,
             itemCount: widget.mediaUrls.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            itemBuilder: (context, index) {
-              final url = widget.mediaUrls[index];
-              if (YouTubeHelper.isYouTubeUrl(url)) {
-                final videoId = YouTubeHelper.extractVideoId(url);
-                if (videoId != null) {
-                  final controller = _getYouTubeController(videoId, index);
-                  return Center(
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: YoutubePlayerIFrame(controller: controller),
-                    ),
-                  );
-                }
-              }
-              return InteractiveViewer(
-                child: Image.network(
-                  url,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                        color: Colors.white,
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.broken_image,
-                          color: Colors.white70, size: 48),
-                    );
-                  },
-                ),
-              );
-            },
+            onPageChanged: _onPageChanged,
+            itemBuilder: (context, index) => _buildMediaItem(index),
           ),
 
           // Only show navigation controls if we have more than 1 item
@@ -281,7 +383,8 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
               bottom: 40,
               left: 20,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(20),
@@ -314,6 +417,32 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
                 onPressed: () =>
                     downloadToGallery(widget.mediaUrls[_currentIndex], context),
                 child: const Icon(Icons.download, color: Colors.white),
+              ),
+            ),
+
+          // Video indicator for YouTube videos
+          if (YouTubeHelper.isYouTubeUrl(widget.mediaUrls[_currentIndex]))
+            Positioned(
+              bottom: 100,
+              right: 20,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.play_arrow, color: Colors.white, size: 16),
+                    SizedBox(width: 4),
+                    Text(
+                      'YouTube Video',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],

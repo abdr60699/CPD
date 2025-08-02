@@ -1,6 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import 'models/url_expander_service.dart';
 import 'widgets/media_gallery_preview.dart';
@@ -10,7 +11,7 @@ class PropertyCard extends StatefulWidget {
   final Map<String, dynamic> property;
   final VoidCallback onPhonePressed;
   final VoidCallback onWhatsAppPressed;
-  final VoidCallback onMapPressed;
+  final VoidCallback? onMapPressed;
   final bool isMobile;
 
   const PropertyCard({
@@ -18,7 +19,7 @@ class PropertyCard extends StatefulWidget {
     required this.property,
     required this.onPhonePressed,
     required this.onWhatsAppPressed,
-    required this.onMapPressed,
+     this.onMapPressed,
     required this.isMobile,
   });
 
@@ -37,6 +38,10 @@ class _PropertyCardState extends State<PropertyCard>
   bool _isExpandingUrls = false;
   int _expandedCount = 0;
   int _totalUrlsToExpand = 0;
+
+  // YouTube controllers map
+  final Map<String, YoutubePlayerController> _youtubeControllers = {};
+  final Set<String> _playingVideos = {};
 
   @override
   void initState() {
@@ -64,9 +69,10 @@ class _PropertyCardState extends State<PropertyCard>
       }
     }
 
-    // Check which URLs need expansion
+    // Check which URLs need expansion (skip YouTube URLs)
     final urlsToExpand = imageUrls
         .where((url) =>
+            !YouTubeHelper.isYouTubeUrl(url) && // Skip YouTube URLs
             DioUrlExpanderService.needsExpansion(url) &&
             !_expandedUrlCache.containsKey(url))
         .toList();
@@ -129,6 +135,11 @@ class _PropertyCardState extends State<PropertyCard>
 
   /// Get the expanded URL or original URL if expansion failed/not needed
   String _getExpandedUrl(String originalUrl) {
+    // Don't expand YouTube URLs
+    if (YouTubeHelper.isYouTubeUrl(originalUrl)) {
+      return originalUrl;
+    }
+
     if (_expandedUrlCache.containsKey(originalUrl)) {
       return _expandedUrlCache[originalUrl] ?? originalUrl;
     }
@@ -137,6 +148,10 @@ class _PropertyCardState extends State<PropertyCard>
 
   /// Check if a URL is still being expanded
   bool _isUrlBeingExpanded(String url) {
+    // YouTube URLs are never being expanded
+    if (YouTubeHelper.isYouTubeUrl(url)) {
+      return false;
+    }
     return _urlExpansionStatus[url] == true;
   }
 
@@ -219,6 +234,7 @@ class _PropertyCardState extends State<PropertyCard>
             Image.network(
               YouTubeHelper.getThumbnailUrl(videoId),
               width: double.infinity,
+              height: 180,
               fit: BoxFit.cover,
               loadingBuilder: _buildImageLoadingBuilder,
               errorBuilder: (context, error, stackTrace) =>
@@ -469,7 +485,7 @@ class _PropertyCardState extends State<PropertyCard>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${imageStrings.length} images',
+                    '${imageStrings.length} items',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -540,6 +556,10 @@ class _PropertyCardState extends State<PropertyCard>
   @override
   void dispose() {
     _controller.dispose();
+    // Dispose YouTube controllers
+    for (var controller in _youtubeControllers.values) {
+      controller.close();
+    }
     super.dispose();
   }
 
@@ -548,7 +568,7 @@ class _PropertyCardState extends State<PropertyCard>
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 400;
     final isMediumScreen = screenWidth < 600;
-    final titleFontSize = isSmallScreen ? 16.0 : (isMediumScreen ? 18.0 : 20.0);
+    final titleFontSize = isSmallScreen ? 13.0 : (isMediumScreen ? 15.0 : 16.0);
     final locationFontSize =
         isSmallScreen ? 13.0 : (isMediumScreen ? 14.0 : 15.0);
     final priceFontSize = isSmallScreen ? 15.0 : (isMediumScreen ? 16.0 : 18.0);
@@ -611,7 +631,6 @@ class _PropertyCardState extends State<PropertyCard>
                       title,
                       style: TextStyle(
                         fontSize: titleFontSize,
-                        fontWeight: FontWeight.bold,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -619,14 +638,17 @@ class _PropertyCardState extends State<PropertyCard>
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.location_on,
-                            size: smallIconSize, color: Colors.grey),
+                        Icon(
+                          Icons.location_on,
+                          size: smallIconSize,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             location,
                             style: TextStyle(
-                                fontSize: locationFontSize, color: Colors.grey),
+                              fontSize: locationFontSize,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -762,13 +784,12 @@ class _PropertyCardState extends State<PropertyCard>
                         if (images.isNotEmpty)
                           TextButton.icon(
                             onPressed: () {
-                              if (images.isNotEmpty) {
+                              final processedUrls = _getProcessedImageUrls();
+                              if (processedUrls.isNotEmpty) {
                                 showDialog(
                                   context: context,
                                   builder: (_) => MediaGalleryPreview(
-                                    mediaUrls: images
-                                        .map((e) => e.toString())
-                                        .toList(),
+                                    mediaUrls: processedUrls,
                                   ),
                                 );
                               }
@@ -793,26 +814,29 @@ class _PropertyCardState extends State<PropertyCard>
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        SizedBox(
-                          width: 80,
-                          child: ElevatedButton.icon(
-                            onPressed: widget.onMapPressed,
-                            icon: Icon(Icons.location_on, size: smallIconSize),
-                            label: Text(
-                              'Map',
-                              style: TextStyle(fontSize: buttonFontSize),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.blue,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
+                      if (getStringValue('mapLink').isNotEmpty) ...[
+      SizedBox(
+        width: 80,
+        child: ElevatedButton.icon(
+          onPressed: widget.onMapPressed,
+          icon: Icon(Icons.location_on, size: smallIconSize),
+          label: Text(
+            'Map',
+            style: TextStyle(fontSize: buttonFontSize),
+          ),
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.blue,
+            padding: const EdgeInsets.symmetric(
+                horizontal: 8, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(width: 6),
+    ],
                         const SizedBox(width: 6),
                         Expanded(
                           child: ElevatedButton.icon(

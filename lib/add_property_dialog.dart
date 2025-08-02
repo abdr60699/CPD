@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:checkdreamproperty/models/youtube_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
@@ -483,230 +484,562 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
     });
   }
 
-// Updated image preview widget
-  Widget _buildImageUploadSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildTextField(
-                controller: _imageUrlController,
-                label: 'Image URL',
-                hint: 'https://example.com/image.jpg',
-                prefixIcon: Icons.link,
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: _addImageUrl,
-              icon:
-                  Icon(Icons.add_circle, color: Theme.of(context).primaryColor),
-              iconSize: 22,
-            ),
-          ],
-        ),
+// // Updated image preview widget
+//   Widget _buildImageUploadSection() {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Row(
+//           children: [
+//             Expanded(
+//               child: _buildTextField(
+//                 controller: _imageUrlController,
+//                 label: 'Image URL',
+//                 hint: 'https://example.com/image.jpg',
+//                 prefixIcon: Icons.link,
+//               ),
+//             ),
+//             const SizedBox(width: 8),
+//             IconButton(
+//               onPressed: _addImageUrl,
+//               icon:
+//                   Icon(Icons.add_circle, color: Theme.of(context).primaryColor),
+//               iconSize: 22,
+//             ),
+//           ],
+//         ),
 
-        if (_isUploading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: Column(
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 8),
-                  Text('Uploading image...'),
-                ],
-              ),
+//         if (_isUploading)
+//           const Padding(
+//             padding: EdgeInsets.symmetric(vertical: 16),
+//             child: Center(
+//               child: Column(
+//                 children: [
+//                   CircularProgressIndicator(),
+//                   SizedBox(height: 8),
+//                   Text('Uploading image...'),
+//                 ],
+//               ),
+//             ),
+//           ),
+
+//         const SizedBox(height: 12),
+
+//         // Updated image preview with local file support
+//         if (_imageUrls.isNotEmpty)
+//           SizedBox(
+//             height: 100,
+//             child: ListView.builder(
+//               scrollDirection: Axis.horizontal,
+//               itemCount: _imageUrls.length,
+//               itemBuilder: (context, index) {
+//                 return Container(
+//                   margin: const EdgeInsets.only(right: 8),
+//                   child: Stack(
+//                     children: [
+//                       ClipRRect(
+//                         borderRadius: BorderRadius.circular(8),
+//                         child: _buildImageWidget(index),
+//                       ),
+
+//                       // Upload status indicator
+//                       if (!_isImageUploaded[index])
+//                         Positioned(
+//                           top: 4,
+//                           left: 4,
+//                           child: Container(
+//                             padding: const EdgeInsets.all(4),
+//                             decoration: BoxDecoration(
+//                               color: Colors.orange,
+//                               borderRadius: BorderRadius.circular(4),
+//                             ),
+//                             child: const Icon(
+//                               Icons.cloud_upload,
+//                               color: Colors.white,
+//                               size: 16,
+//                             ),
+//                           ),
+//                         ),
+
+//                       // Remove button
+//                       Positioned(
+//                         top: 4,
+//                         right: 4,
+//                         child: GestureDetector(
+//                           onTap: () => _removeImageUrl(index),
+//                           child: Container(
+//                             decoration: const BoxDecoration(
+//                               color: Colors.red,
+//                               shape: BoxShape.circle,
+//                             ),
+//                             child: const Icon(
+//                               Icons.close,
+//                               color: Colors.white,
+//                               size: 20,
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 );
+//               },
+//             ),
+//           ),
+//         const SizedBox(height: 8),
+//         // Upload buttons row
+//         Row(
+//           children: [
+//             Expanded(
+//               child: OutlinedButton.icon(
+//                 onPressed: _isUploading
+//                     ? null
+//                     : () => _pickImageFile(ImageSource.gallery),
+//                 icon: const Icon(Icons.photo_library),
+//                 label: const Text('Upload'),
+//                 style: OutlinedButton.styleFrom(
+//                   padding: const EdgeInsets.symmetric(vertical: 12),
+//                   shape: RoundedRectangleBorder(
+//                     borderRadius: BorderRadius.circular(12),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//             const SizedBox(width: 8),
+//             Expanded(
+//               child: OutlinedButton.icon(
+//                 onPressed: _isUploading
+//                     ? null
+//                     : () => _pickImageFile(ImageSource.camera),
+//                 icon: const Icon(Icons.camera_alt),
+//                 label: const Text('Camera'),
+//                 style: OutlinedButton.styleFrom(
+//                   padding: const EdgeInsets.symmetric(vertical: 12),
+//                   shape: RoundedRectangleBorder(
+//                     borderRadius: BorderRadius.circular(12),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildImageWidget(int index) {
+//     const double imageSize = 100;
+
+//     // If it's a local file (not uploaded yet), show from file
+//     if (!_isImageUploaded[index] && _localImageFiles[index].path.isNotEmpty) {
+//       return Image.file(
+//         _localImageFiles[index],
+//         width: imageSize,
+//         height: imageSize,
+//         fit: BoxFit.cover,
+//         errorBuilder: (context, error, stackTrace) {
+//           return Container(
+//             width: imageSize,
+//             height: imageSize,
+//             color: Colors.grey[300],
+//             child: const Center(
+//               child: Column(
+//                 mainAxisAlignment: MainAxisAlignment.center,
+//                 children: [
+//                   Icon(Icons.error, color: Colors.red),
+//                   Text("Error", style: TextStyle(fontSize: 12)),
+//                 ],
+//               ),
+//             ),
+//           );
+//         },
+//       );
+//     }
+
+//     // If it's uploaded or a URL, show from network
+//     if (_imageUrls[index].isNotEmpty) {
+//       return Image.network(
+//         _imageUrls[index],
+//         width: imageSize,
+//         height: imageSize,
+//         fit: BoxFit.cover,
+//         loadingBuilder: (context, child, loadingProgress) {
+//           if (loadingProgress == null) return child;
+//           return Container(
+//             width: imageSize,
+//             height: imageSize,
+//             color: Colors.grey[300],
+//             child: Center(
+//               child: CircularProgressIndicator(
+//                 value: loadingProgress.expectedTotalBytes != null
+//                     ? loadingProgress.cumulativeBytesLoaded /
+//                         loadingProgress.expectedTotalBytes!
+//                     : null,
+//               ),
+//             ),
+//           );
+//         },
+//         errorBuilder: (context, error, stackTrace) {
+//           return Container(
+//             width: imageSize,
+//             height: imageSize,
+//             color: Colors.grey[300],
+//             child: const Center(
+//               child: Column(
+//                 mainAxisAlignment: MainAxisAlignment.center,
+//                 children: [
+//                   Icon(Icons.error, color: Colors.red),
+//                   Text("Error", style: TextStyle(fontSize: 12)),
+//                 ],
+//               ),
+//             ),
+//           );
+//         },
+//       );
+//     }
+
+//     // Fallback
+//     return Container(
+//       width: imageSize,
+//       height: imageSize,
+//       color: Colors.grey[300],
+//       child: const Center(
+//         child: Icon(Icons.image, color: Colors.grey),
+//       ),
+//     );
+//   }
+
+
+
+
+// Replace the _buildImageWidget method in AddPropertyDialog:
+Widget _buildImageWidget(int index) {
+  const double imageSize = 100;
+
+  // If it's a local file (not uploaded yet), show from file
+  if (!_isImageUploaded[index] && _localImageFiles[index].path.isNotEmpty) {
+    return Image.file(
+      _localImageFiles[index],
+      width: imageSize,
+      height: imageSize,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: imageSize,
+          height: imageSize,
+          color: Colors.grey[300],
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, color: Colors.red),
+                Text("Error", style: TextStyle(fontSize: 12)),
+              ],
             ),
           ),
+        );
+      },
+    );
+  }
 
-        const SizedBox(height: 12),
-
-        // Updated image preview with local file support
-        if (_imageUrls.isNotEmpty)
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _imageUrls.length,
-              itemBuilder: (context, index) {
+  // If it's uploaded or a URL, show from network
+  if (_imageUrls[index].isNotEmpty) {
+    final url = _imageUrls[index];
+    
+    // Check if it's a YouTube URL
+    if (YouTubeHelper.isYouTubeUrl(url)) {
+      final videoId = YouTubeHelper.extractVideoId(url);
+      if (videoId != null) {
+        return Stack(
+          children: [
+            Image.network(
+              YouTubeHelper.getThumbnailUrl(videoId),
+              width: imageSize,
+              height: imageSize,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
                 return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: _buildImageWidget(index),
-                      ),
-
-                      // Upload status indicator
-                      if (!_isImageUploaded[index])
-                        Positioned(
-                          top: 4,
-                          left: 4,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.orange,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Icon(
-                              Icons.cloud_upload,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-
-                      // Remove button
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () => _removeImageUrl(index),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  width: imageSize,
+                  height: imageSize,
+                  color: Colors.grey[300],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: imageSize,
+                  height: imageSize,
+                  color: Colors.grey[300],
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error, color: Colors.red),
+                        Text("Error", style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
-          ),
-        const SizedBox(height: 8),
-        // Upload buttons row
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _isUploading
-                    ? null
-                    : () => _pickImageFile(ImageSource.gallery),
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Upload'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+            // YouTube play button overlay
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.8),
+                  shape: BoxShape.circle,
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _isUploading
-                    ? null
-                    : () => _pickImageFile(ImageSource.camera),
-                icon: const Icon(Icons.camera_alt),
-                label: const Text('Camera'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                padding: const EdgeInsets.all(8),
+                child: const Icon(
+                  Icons.play_arrow,
+                  color: Colors.white,
+                  size: 16,
                 ),
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImageWidget(int index) {
-    const double imageSize = 100;
-
-    // If it's a local file (not uploaded yet), show from file
-    if (!_isImageUploaded[index] && _localImageFiles[index].path.isNotEmpty) {
-      return Image.file(
-        _localImageFiles[index],
-        width: imageSize,
-        height: imageSize,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: imageSize,
-            height: imageSize,
-            color: Colors.grey[300],
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, color: Colors.red),
-                  Text("Error", style: TextStyle(fontSize: 12)),
-                ],
-              ),
-            ),
-          );
-        },
-      );
+        );
+      }
     }
 
-    // If it's uploaded or a URL, show from network
-    if (_imageUrls[index].isNotEmpty) {
-      return Image.network(
-        _imageUrls[index],
-        width: imageSize,
-        height: imageSize,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: imageSize,
-            height: imageSize,
-            color: Colors.grey[300],
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: imageSize,
-            height: imageSize,
-            color: Colors.grey[300],
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, color: Colors.red),
-                  Text("Error", style: TextStyle(fontSize: 12)),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    }
-
-    // Fallback
-    return Container(
+    // Regular image
+    return Image.network(
+      url,
       width: imageSize,
       height: imageSize,
-      color: Colors.grey[300],
-      child: const Center(
-        child: Icon(Icons.image, color: Colors.grey),
-      ),
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          width: imageSize,
+          height: imageSize,
+          color: Colors.grey[300],
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: imageSize,
+          height: imageSize,
+          color: Colors.grey[300],
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, color: Colors.red),
+                Text("Error", style: TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
+
+  // Fallback
+  return Container(
+    width: imageSize,
+    height: imageSize,
+    color: Colors.grey[300],
+    child: const Center(
+      child: Icon(Icons.image, color: Colors.grey),
+    ),
+  );
+}
+
+// Replace the _buildImageUploadSection method in AddPropertyDialog:
+Widget _buildImageUploadSection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: _buildTextField(
+              controller: _imageUrlController,
+              label: 'Image/Video URL',
+              hint: 'https://example.com/image.jpg or YouTube URL',
+              prefixIcon: Icons.link,
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: _addImageUrl,
+            icon:
+                Icon(Icons.add_circle, color: Theme.of(context).primaryColor),
+            iconSize: 22,
+          ),
+        ],
+      ),
+
+      if (_isUploading)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Center(
+            child: Column(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 8),
+                Text('Uploading image...'),
+              ],
+            ),
+          ),
+        ),
+
+      const SizedBox(height: 12),
+
+      // Updated image preview with YouTube support
+      if (_imageUrls.isNotEmpty)
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _imageUrls.length,
+            itemBuilder: (context, index) {
+              final isYouTube = YouTubeHelper.isYouTubeUrl(_imageUrls[index]);
+              
+              return Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: _buildImageWidget(index),
+                    ),
+
+                    // YouTube indicator
+                    if (isYouTube)
+                      Positioned(
+                        bottom: 4,
+                        left: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'VIDEO',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Upload status indicator
+                    if (!_isImageUploaded[index])
+                      Positioned(
+                        top: 4,
+                        left: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.orange,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(
+                            Icons.cloud_upload,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+
+                    // Remove button
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => _removeImageUrl(index),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      const SizedBox(height: 8),
+      // Upload buttons row
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _isUploading
+                  ? null
+                  : () => _pickImageFile(ImageSource.gallery),
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Upload'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _isUploading
+                  ? null
+                  : () => _pickImageFile(ImageSource.camera),
+              icon: const Icon(Icons.camera_alt),
+              label: const Text('Camera'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Text(
+        'Note: You can add images, YouTube videos, or other media URLs',
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey[600],
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    ],
+  );
+}
 
   void _addPhoneNumber() {
     setState(() {

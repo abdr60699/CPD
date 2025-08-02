@@ -22,7 +22,7 @@ class ContactUsPage extends StatelessWidget {
               decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: NetworkImage(
-                              'https://images.unsplash.com/photo-1690900257842-f78779d310cd?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZW1wdHklMjBsYW5kJTIwcGljdHVyZXMlMjBmb3IlMjBidWlsZGluZyUyMGluJTIwaW5kaWF8ZW58MHx8MHx8fDA%3D',
+                    'https://images.unsplash.com/photo-1690900257842-f78779d310cd?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZW1wdHklMjBsYW5kJTIwcGljdHVyZXMlMjBmb3IlMjBidWlsZGluZyUyMGluJTIwaW5kaWF8ZW58MHx8MHx8fDA%3D',
                   ),
                   fit: BoxFit.cover,
                 ),
@@ -39,9 +39,9 @@ class ContactUsPage extends StatelessWidget {
                   ),
                 ),
                 child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                       FadeInDown(
                         delay: const Duration(milliseconds: 300),
                         child: Text(
@@ -61,7 +61,7 @@ class ContactUsPage extends StatelessWidget {
                           width: 80,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
@@ -78,7 +78,7 @@ class ContactUsPage extends StatelessWidget {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                  ],
+                    ],
                   ),
                 ),
               ),
@@ -141,7 +141,7 @@ class ContactUsPage extends StatelessWidget {
             Container(
               width: 50,
               height: 3,
-              color: Theme.of(context).primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 25),
             // _buildContactInfo(context, Icons.location_on, 'Office Address',
@@ -200,7 +200,7 @@ class ContactUsPage extends StatelessWidget {
               Container(
                 width: 50,
                 height: 3,
-                color: Theme.of(context).primaryColor,
+                color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 25),
               Wrap(
@@ -250,7 +250,7 @@ class ContactUsPage extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
@@ -276,9 +276,11 @@ class ContactUsPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CircleAvatar(
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          backgroundColor:
+              Theme.of(context).colorScheme.primary.withOpacity(0.1),
           radius: 25,
-          child: Icon(icon, color: Theme.of(context).primaryColor, size: 24),
+          child: Icon(icon,
+              color: Theme.of(context).colorScheme.primary, size: 24),
         ),
         const SizedBox(width: 15),
         Expanded(
