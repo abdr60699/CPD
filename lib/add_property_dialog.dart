@@ -167,10 +167,6 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
           'property_${DateTime.now().millisecondsSinceEpoch}$fileExtension';
       final filePath = 'property_images/$fileName';
 
-      print('Uploading compressed image: $fileName');
-      print('Original size: ${await imageFile.length()} bytes');
-      print('Compressed size: ${await compressedFile.length()} bytes');
-
       // Upload compressed file using file path
       final response =
           await Supabase.instance.client.storage.from('property-images').upload(
@@ -180,8 +176,6 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
                   upsert: false,
                 ),
               );
-
-      print('Upload response: $response');
 
       // Clean up compressed file if it's different from original
       if (compressedFile.path != imageFile.path) {
@@ -240,22 +234,16 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
       );
 
       if (compressedFile != null) {
-        final compressedSize = await File(compressedFile.path).length();
-        print('Compression: $originalSize bytes -> $compressedSize bytes');
-        print(
-            'Compression ratio: ${(compressedSize / originalSize * 100).toStringAsFixed(1)}%');
-
+        // final compressedSize = await File(compressedFile.path).length();
         return File(compressedFile.path);
       }
 
       return originalFile; // Return original if compression failed
     } catch (e) {
-      print('Error compressing image: $e');
       return originalFile; // Return original if compression failed
     }
   }
 
-// Add this helper method:
   String _getContentType(String fileExtension) {
     switch (fileExtension.toLowerCase()) {
       case '.jpg':
@@ -272,11 +260,9 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
     }
   }
 
-// Add this retry method:
   Future<String?> _uploadImageWithRetry(File imageFile,
       [int retryCount = 0]) async {
     if (retryCount >= 3) {
-      print('Max retry attempts reached');
       return null;
     }
 
@@ -296,7 +282,6 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
           'property_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}$fileExtension';
       final filePath = 'property_images/$fileName';
 
-      print('Retry upload attempt ${retryCount + 1}: $fileName');
 
       // Upload compressed file
       final response =
@@ -483,233 +468,6 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
       _isImageUploaded.removeAt(index);
     });
   }
-
-// // Updated image preview widget
-//   Widget _buildImageUploadSection() {
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Row(
-//           children: [
-//             Expanded(
-//               child: _buildTextField(
-//                 controller: _imageUrlController,
-//                 label: 'Image URL',
-//                 hint: 'https://example.com/image.jpg',
-//                 prefixIcon: Icons.link,
-//               ),
-//             ),
-//             const SizedBox(width: 8),
-//             IconButton(
-//               onPressed: _addImageUrl,
-//               icon:
-//                   Icon(Icons.add_circle, color: Theme.of(context).primaryColor),
-//               iconSize: 22,
-//             ),
-//           ],
-//         ),
-
-//         if (_isUploading)
-//           const Padding(
-//             padding: EdgeInsets.symmetric(vertical: 16),
-//             child: Center(
-//               child: Column(
-//                 children: [
-//                   CircularProgressIndicator(),
-//                   SizedBox(height: 8),
-//                   Text('Uploading image...'),
-//                 ],
-//               ),
-//             ),
-//           ),
-
-//         const SizedBox(height: 12),
-
-//         // Updated image preview with local file support
-//         if (_imageUrls.isNotEmpty)
-//           SizedBox(
-//             height: 100,
-//             child: ListView.builder(
-//               scrollDirection: Axis.horizontal,
-//               itemCount: _imageUrls.length,
-//               itemBuilder: (context, index) {
-//                 return Container(
-//                   margin: const EdgeInsets.only(right: 8),
-//                   child: Stack(
-//                     children: [
-//                       ClipRRect(
-//                         borderRadius: BorderRadius.circular(8),
-//                         child: _buildImageWidget(index),
-//                       ),
-
-//                       // Upload status indicator
-//                       if (!_isImageUploaded[index])
-//                         Positioned(
-//                           top: 4,
-//                           left: 4,
-//                           child: Container(
-//                             padding: const EdgeInsets.all(4),
-//                             decoration: BoxDecoration(
-//                               color: Colors.orange,
-//                               borderRadius: BorderRadius.circular(4),
-//                             ),
-//                             child: const Icon(
-//                               Icons.cloud_upload,
-//                               color: Colors.white,
-//                               size: 16,
-//                             ),
-//                           ),
-//                         ),
-
-//                       // Remove button
-//                       Positioned(
-//                         top: 4,
-//                         right: 4,
-//                         child: GestureDetector(
-//                           onTap: () => _removeImageUrl(index),
-//                           child: Container(
-//                             decoration: const BoxDecoration(
-//                               color: Colors.red,
-//                               shape: BoxShape.circle,
-//                             ),
-//                             child: const Icon(
-//                               Icons.close,
-//                               color: Colors.white,
-//                               size: 20,
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 );
-//               },
-//             ),
-//           ),
-//         const SizedBox(height: 8),
-//         // Upload buttons row
-//         Row(
-//           children: [
-//             Expanded(
-//               child: OutlinedButton.icon(
-//                 onPressed: _isUploading
-//                     ? null
-//                     : () => _pickImageFile(ImageSource.gallery),
-//                 icon: const Icon(Icons.photo_library),
-//                 label: const Text('Upload'),
-//                 style: OutlinedButton.styleFrom(
-//                   padding: const EdgeInsets.symmetric(vertical: 12),
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(12),
-//                   ),
-//                 ),
-//               ),
-//             ),
-//             const SizedBox(width: 8),
-//             Expanded(
-//               child: OutlinedButton.icon(
-//                 onPressed: _isUploading
-//                     ? null
-//                     : () => _pickImageFile(ImageSource.camera),
-//                 icon: const Icon(Icons.camera_alt),
-//                 label: const Text('Camera'),
-//                 style: OutlinedButton.styleFrom(
-//                   padding: const EdgeInsets.symmetric(vertical: 12),
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(12),
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _buildImageWidget(int index) {
-//     const double imageSize = 100;
-
-//     // If it's a local file (not uploaded yet), show from file
-//     if (!_isImageUploaded[index] && _localImageFiles[index].path.isNotEmpty) {
-//       return Image.file(
-//         _localImageFiles[index],
-//         width: imageSize,
-//         height: imageSize,
-//         fit: BoxFit.cover,
-//         errorBuilder: (context, error, stackTrace) {
-//           return Container(
-//             width: imageSize,
-//             height: imageSize,
-//             color: Colors.grey[300],
-//             child: const Center(
-//               child: Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   Icon(Icons.error, color: Colors.red),
-//                   Text("Error", style: TextStyle(fontSize: 12)),
-//                 ],
-//               ),
-//             ),
-//           );
-//         },
-//       );
-//     }
-
-//     // If it's uploaded or a URL, show from network
-//     if (_imageUrls[index].isNotEmpty) {
-//       return Image.network(
-//         _imageUrls[index],
-//         width: imageSize,
-//         height: imageSize,
-//         fit: BoxFit.cover,
-//         loadingBuilder: (context, child, loadingProgress) {
-//           if (loadingProgress == null) return child;
-//           return Container(
-//             width: imageSize,
-//             height: imageSize,
-//             color: Colors.grey[300],
-//             child: Center(
-//               child: CircularProgressIndicator(
-//                 value: loadingProgress.expectedTotalBytes != null
-//                     ? loadingProgress.cumulativeBytesLoaded /
-//                         loadingProgress.expectedTotalBytes!
-//                     : null,
-//               ),
-//             ),
-//           );
-//         },
-//         errorBuilder: (context, error, stackTrace) {
-//           return Container(
-//             width: imageSize,
-//             height: imageSize,
-//             color: Colors.grey[300],
-//             child: const Center(
-//               child: Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   Icon(Icons.error, color: Colors.red),
-//                   Text("Error", style: TextStyle(fontSize: 12)),
-//                 ],
-//               ),
-//             ),
-//           );
-//         },
-//       );
-//     }
-
-//     // Fallback
-//     return Container(
-//       width: imageSize,
-//       height: imageSize,
-//       color: Colors.grey[300],
-//       child: const Center(
-//         child: Icon(Icons.image, color: Colors.grey),
-//       ),
-//     );
-//   }
-
-
 
 
 // Replace the _buildImageWidget method in AddPropertyDialog:
