@@ -1,3 +1,4 @@
+import 'package:checkdreamproperty/analytics_data_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'utils/web_utils.dart';
@@ -10,6 +11,46 @@ PreferredSizeWidget buildResponsiveAppBar(
     surfaceTintColor: Colors.transparent,
     backgroundColor: Colors.white,
     elevation: 4,
+    actions: !isMobile
+        ? null
+        : [
+            IconButton(
+              iconSize: 20,
+              color: Colors.deepPurple,
+              icon: const Icon(Icons.analytics),
+              tooltip: 'View Analytics',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AnalyticsDataScreen(),
+                  ),
+                );
+              },
+            ),
+
+            //  Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            //   child: ElevatedButton.icon(
+            //     onPressed: () {
+            //       Navigator.push(
+            //         context,
+            //         MaterialPageRoute(
+            //           builder: (context) => const AnalyticsDataScreen(),
+            //         ),
+            //       );
+            //     },
+            //     icon: const Icon(Icons.analytics, size: 18),
+            //     label: const Text('Analytics'),
+            //     style: ElevatedButton.styleFrom(
+            //       foregroundColor: Colors.white,
+            //       backgroundColor: Colors.deepPurple,
+            //       elevation: 0,
+            //       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            //     ),
+            //   ),
+            // ),
+          ],
     title: Row(
       children: [
         Padding(
@@ -44,8 +85,8 @@ PreferredSizeWidget buildResponsiveAppBar(
         ),
         Text(
           'Check Dream Property',
-          style: GoogleFonts.montserrat(
-            fontSize: 18,
+          style: GoogleFonts.poppins(
+            fontSize: 17,
             fontWeight: FontWeight.w700,
             color: Theme.of(context).colorScheme.primary,
           ),

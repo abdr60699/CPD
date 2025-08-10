@@ -37,7 +37,7 @@ class RealEstateApp extends StatelessWidget {
     surface: Colors.white, // Most important for cards
     onSurface: Colors.black,
   ),
-  cardTheme: CardTheme(
+  cardTheme:  CardTheme(
     color: Colors.white,
     elevation: 4,
     margin: EdgeInsets.zero,

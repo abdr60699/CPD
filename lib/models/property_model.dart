@@ -2,8 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PropertyService {
   final SupabaseClient _supabase = Supabase.instance.client;
-
-  // Fetch all properties from Supabase
+  // Updated fetchProperties method with new default values
   Future<List<Map<String, dynamic>>> fetchProperties() async {
     try {
       final response = await _supabase
@@ -39,6 +38,24 @@ class PropertyService {
         propertyData['builtupArea'] = propertyData['builtupArea'] ?? 0;
         propertyData['propertyTax'] = propertyData['propertyTax'] ?? 0;
         
+        // NEW FIELDS WITH DEFAULT VALUES
+        propertyData['purpose'] = propertyData['purpose'] ?? 'For Sale';
+        propertyData['propertyStatus'] = propertyData['propertyStatus'] ?? 'New';
+        propertyData['negotiablePrice'] = propertyData['negotiablePrice'] ?? false;
+        propertyData['maintenanceCharges'] = propertyData['maintenanceCharges'] ?? 0;
+        propertyData['depositAmount'] = propertyData['depositAmount'] ?? 0;
+        propertyData['floorNumber'] = propertyData['floorNumber'] ?? 0;
+        propertyData['totalFloors'] = propertyData['totalFloors'] ?? 0;
+        propertyData['parkingAvailable'] = propertyData['parkingAvailable'] ?? false;
+        propertyData['parkingCount'] = propertyData['parkingCount'] ?? 0;
+        propertyData['balconyAvailable'] = propertyData['balconyAvailable'] ?? false;
+        propertyData['balconyCount'] = propertyData['balconyCount'] ?? 0;
+        propertyData['furnishingStatus'] = propertyData['furnishingStatus'] ?? 'Unfurnished';
+        propertyData['ownerType'] = propertyData['ownerType'] ?? 'Owner';
+        propertyData['contactPerson'] = propertyData['contactPerson'] ?? '';
+        propertyData['description'] = propertyData['description'] ?? '';
+        propertyData['urgentSale'] = propertyData['urgentSale'] ?? false;
+        
         // Handle landmarks - some properties have 'landmark' (string) and some have 'landmarks' (array)
         if (propertyData['landmark'] != null && propertyData['landmarks'] == null) {
           propertyData['landmarks'] = [propertyData['landmark']];
@@ -64,7 +81,7 @@ class PropertyService {
             contact['whatsapp'] = contact['phone'] ?? '';
           }
         }
-
+        print('Property data: $propertyData');
         return propertyData;
       }).toList();
     } catch (e) {

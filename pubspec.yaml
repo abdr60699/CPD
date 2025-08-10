@@ -36,6 +36,7 @@ dependencies:
   dio: ^5.8.0+1
   path: ^1.9.0
   flutter_image_compress: ^2.3.0
+  intl: ^0.20.2
 
 dependency_overrides:
   postgrest: ^2.1.4   

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:checkdreamproperty/models/format_inr.dart';
 import 'package:checkdreamproperty/models/youtube_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -49,6 +50,14 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
   final _imageUrlController = TextEditingController();
   final _cityController = TextEditingController();
   final _locationController = TextEditingController();
+  final _maintenanceChargesController = TextEditingController();
+  final _depositAmountController = TextEditingController();
+  final _floorNumberController = TextEditingController();
+  final _totalFloorsController = TextEditingController();
+  final _numberOfBalconiesController = TextEditingController();
+  final _contactPersonNameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _numberOfParkingController = TextEditingController();
 
   // Form values
   String _selectedType = 'Apartment';
@@ -60,12 +69,40 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
   List<String> _landmarks = [''];
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
+  String _selectedPurpose = 'For Sale';
+  String _selectedPropertyStatus = 'Resale';
+  String _selectedFurnishingStatus = 'Unfurnished';
+  String _selectedOwnerType = 'Owner';
+  bool _negotiablePrice = false;
+  bool _parkingAvailable = false;
+  bool _balconyAvailable = false;
+  bool _urgentSale = false;
+
+  // New dropdown options
+  final List<String> _purposeOptions = ['For Sale', 'For Rent'];
+  final List<String> _propertyStatusOptions = [
+    'New',
+    'Resale',
+    'Under Construction'
+  ];
+  final List<String> _furnishingStatusOptions = [
+    'Unfurnished',
+    'Semi-Furnished',
+    'Fully-Furnished'
+  ];
+  final List<String> _ownerTypeOptions = ['Owner', 'Agent', 'Builder'];
 
   final List<String> _propertyTypes = [
     'Apartment',
     'Villa',
     'Plot',
-    'Commercial'
+    'Commercial',
+    "Apartment / Flat",
+    "Independent House / Villa",
+    "Plot / Land",
+    "Residential Building (Multi-Unit)",
+    "Commercial Property",
+    "Farm Land / Agriculture"
   ];
 
   @override
@@ -97,6 +134,26 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
     _rentAmountController.text = property['rentAmount']?.toString() ?? '';
     _whatsappController.text = property['contact']?['whatsapp'] ?? '';
     _imageUrls = List<String>.from(property['images'] ?? []);
+    _selectedPurpose = property['purpose'] ?? 'For Sale';
+    _selectedPropertyStatus = property['propertyStatus'] ?? 'Resale';
+    _selectedFurnishingStatus = property['furnishingStatus'] ?? 'Unfurnished';
+    _selectedOwnerType = property['ownerType'] ?? 'Owner';
+    _negotiablePrice = property['negotiablePrice'] ?? false;
+    _parkingAvailable = property['parkingAvailable'] ?? false;
+    _balconyAvailable = property['balconyAvailable'] ?? false;
+    _urgentSale = property['urgentSale'] ?? false;
+
+    _maintenanceChargesController.text =
+        property['maintenanceCharges']?.toString() ?? '';
+    _depositAmountController.text = property['depositAmount']?.toString() ?? '';
+    _floorNumberController.text = property['floorNumber']?.toString() ?? '';
+    _totalFloorsController.text = property['totalFloors']?.toString() ?? '';
+    _numberOfBalconiesController.text =
+        property['numberOfBalconies']?.toString() ?? '';
+    _numberOfParkingController.text =
+        property['numberOfParking']?.toString() ?? '';
+    _contactPersonNameController.text = property['contactPersonName'] ?? '';
+    _descriptionController.text = property['description'] ?? '';
 
     // Handle multiple phone numbers
     if (property['contact']?['phoneNumbers'] != null) {
@@ -139,6 +196,14 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
     _scrollController.dispose();
     _cityController.dispose();
     _locationController.dispose();
+    _maintenanceChargesController.dispose();
+    _depositAmountController.dispose();
+    _floorNumberController.dispose();
+    _totalFloorsController.dispose();
+    _numberOfBalconiesController.dispose();
+    _contactPersonNameController.dispose();
+    _descriptionController.dispose();
+    _numberOfParkingController.dispose();
     super.dispose();
   }
 
@@ -281,7 +346,6 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
       final fileName =
           'property_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}$fileExtension';
       final filePath = 'property_images/$fileName';
-
 
       // Upload compressed file
       final response =
@@ -469,335 +533,334 @@ class _AddPropertyDialogState extends State<AddPropertyDialog> {
     });
   }
 
-
 // Replace the _buildImageWidget method in AddPropertyDialog:
-Widget _buildImageWidget(int index) {
-  const double imageSize = 100;
+  Widget _buildImageWidget(int index) {
+    const double imageSize = 100;
 
-  // If it's a local file (not uploaded yet), show from file
-  if (!_isImageUploaded[index] && _localImageFiles[index].path.isNotEmpty) {
-    return Image.file(
-      _localImageFiles[index],
-      width: imageSize,
-      height: imageSize,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          width: imageSize,
-          height: imageSize,
-          color: Colors.grey[300],
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error, color: Colors.red),
-                Text("Error", style: TextStyle(fontSize: 12)),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // If it's uploaded or a URL, show from network
-  if (_imageUrls[index].isNotEmpty) {
-    final url = _imageUrls[index];
-    
-    // Check if it's a YouTube URL
-    if (YouTubeHelper.isYouTubeUrl(url)) {
-      final videoId = YouTubeHelper.extractVideoId(url);
-      if (videoId != null) {
-        return Stack(
-          children: [
-            Image.network(
-              YouTubeHelper.getThumbnailUrl(videoId),
-              width: imageSize,
-              height: imageSize,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  width: imageSize,
-                  height: imageSize,
-                  color: Colors.grey[300],
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: imageSize,
-                  height: imageSize,
-                  color: Colors.grey[300],
-                  child: const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.error, color: Colors.red),
-                        Text("Error", style: TextStyle(fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            // YouTube play button overlay
-            Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.8),
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(8),
-                child: const Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                  size: 16,
-                ),
+    // If it's a local file (not uploaded yet), show from file
+    if (!_isImageUploaded[index] && _localImageFiles[index].path.isNotEmpty) {
+      return Image.file(
+        _localImageFiles[index],
+        width: imageSize,
+        height: imageSize,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: imageSize,
+            height: imageSize,
+            color: Colors.grey[300],
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, color: Colors.red),
+                  Text("Error", style: TextStyle(fontSize: 12)),
+                ],
               ),
             ),
-          ],
-        );
-      }
+          );
+        },
+      );
     }
 
-    // Regular image
-    return Image.network(
-      url,
+    // If it's uploaded or a URL, show from network
+    if (_imageUrls[index].isNotEmpty) {
+      final url = _imageUrls[index];
+
+      // Check if it's a YouTube URL
+      if (YouTubeHelper.isYouTubeUrl(url)) {
+        final videoId = YouTubeHelper.extractVideoId(url);
+        if (videoId != null) {
+          return Stack(
+            children: [
+              Image.network(
+                YouTubeHelper.getThumbnailUrl(videoId),
+                width: imageSize,
+                height: imageSize,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: imageSize,
+                    height: imageSize,
+                    color: Colors.grey[300],
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: imageSize,
+                    height: imageSize,
+                    color: Colors.grey[300],
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error, color: Colors.red),
+                          Text("Error", style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // YouTube play button overlay
+              Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.8),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: const Icon(
+                    Icons.play_arrow,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+      }
+
+      // Regular image
+      return Image.network(
+        url,
+        width: imageSize,
+        height: imageSize,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: imageSize,
+            height: imageSize,
+            color: Colors.grey[300],
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: imageSize,
+            height: imageSize,
+            color: Colors.grey[300],
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, color: Colors.red),
+                  Text("Error", style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // Fallback
+    return Container(
       width: imageSize,
       height: imageSize,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Container(
-          width: imageSize,
-          height: imageSize,
-          color: Colors.grey[300],
-          child: Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          width: imageSize,
-          height: imageSize,
-          color: Colors.grey[300],
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error, color: Colors.red),
-                Text("Error", style: TextStyle(fontSize: 12)),
-              ],
-            ),
-          ),
-        );
-      },
+      color: Colors.grey[300],
+      child: const Center(
+        child: Icon(Icons.image, color: Colors.grey),
+      ),
     );
   }
 
-  // Fallback
-  return Container(
-    width: imageSize,
-    height: imageSize,
-    color: Colors.grey[300],
-    child: const Center(
-      child: Icon(Icons.image, color: Colors.grey),
-    ),
-  );
-}
-
 // Replace the _buildImageUploadSection method in AddPropertyDialog:
-Widget _buildImageUploadSection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: _buildTextField(
-              controller: _imageUrlController,
-              label: 'Image/Video URL',
-              hint: 'https://example.com/image.jpg or YouTube URL',
-              prefixIcon: Icons.link,
+  Widget _buildImageUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: _imageUrlController,
+                label: 'Image/Video URL',
+                hint: 'https://example.com/image.jpg or YouTube URL',
+                prefixIcon: Icons.link,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: _addImageUrl,
-            icon:
-                Icon(Icons.add_circle, color: Theme.of(context).primaryColor),
-            iconSize: 22,
-          ),
-        ],
-      ),
-
-      if (_isUploading)
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
-          child: Center(
-            child: Column(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 8),
-                Text('Uploading image...'),
-              ],
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: _addImageUrl,
+              icon:
+                  Icon(Icons.add_circle, color: Theme.of(context).primaryColor),
+              iconSize: 22,
             ),
-          ),
+          ],
         ),
 
-      const SizedBox(height: 12),
+        if (_isUploading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Column(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 8),
+                  Text('Uploading image...'),
+                ],
+              ),
+            ),
+          ),
 
-      // Updated image preview with YouTube support
-      if (_imageUrls.isNotEmpty)
-        SizedBox(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _imageUrls.length,
-            itemBuilder: (context, index) {
-              final isYouTube = YouTubeHelper.isYouTubeUrl(_imageUrls[index]);
-              
-              return Container(
-                margin: const EdgeInsets.only(right: 8),
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: _buildImageWidget(index),
-                    ),
+        const SizedBox(height: 12),
 
-                    // YouTube indicator
-                    if (isYouTube)
-                      Positioned(
-                        bottom: 4,
-                        left: 4,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
+        // Updated image preview with YouTube support
+        if (_imageUrls.isNotEmpty)
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _imageUrls.length,
+              itemBuilder: (context, index) {
+                final isYouTube = YouTubeHelper.isYouTubeUrl(_imageUrls[index]);
+
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: _buildImageWidget(index),
+                      ),
+
+                      // YouTube indicator
+                      if (isYouTube)
+                        Positioned(
+                          bottom: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'VIDEO',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'VIDEO',
-                            style: TextStyle(
+                        ),
+
+                      // Upload status indicator
+                      if (!_isImageUploaded[index])
+                        Positioned(
+                          top: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Icon(
+                              Icons.cloud_upload,
                               color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+
+                      // Remove button
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => _removeImageUrl(index),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 20,
                             ),
                           ),
                         ),
                       ),
-
-                    // Upload status indicator
-                    if (!_isImageUploaded[index])
-                      Positioned(
-                        top: 4,
-                        left: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Icon(
-                            Icons.cloud_upload,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-
-                    // Remove button
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: () => _removeImageUrl(index),
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-      const SizedBox(height: 8),
-      // Upload buttons row
-      Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _isUploading
-                  ? null
-                  : () => _pickImageFile(ImageSource.gallery),
-              icon: const Icon(Icons.photo_library),
-              label: const Text('Upload'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+        const SizedBox(height: 8),
+        // Upload buttons row
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isUploading
+                    ? null
+                    : () => _pickImageFile(ImageSource.gallery),
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Upload'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _isUploading
-                  ? null
-                  : () => _pickImageFile(ImageSource.camera),
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Camera'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isUploading
+                    ? null
+                    : () => _pickImageFile(ImageSource.camera),
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Camera'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 8),
-      Text(
-        'Note: You can add images, YouTube videos, or other media URLs',
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey[600],
-          fontStyle: FontStyle.italic,
+          ],
         ),
-      ),
-    ],
-  );
-}
+        const SizedBox(height: 8),
+        Text(
+          'Note: You can add images, YouTube videos, or other media URLs',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
 
   void _addPhoneNumber() {
     setState(() {
@@ -889,7 +952,25 @@ Widget _buildImageUploadSection() {
           // 'phoneNumbers': validPhoneNumbers,
           'phone': validPhoneNumbers.isNotEmpty ? validPhoneNumbers.first : '',
           'whatsapp': whatsappNumber,
-        }
+        },
+        'purpose': _selectedPurpose,
+        'propertyStatus': _selectedPropertyStatus,
+        'furnishingStatus': _selectedFurnishingStatus,
+        'ownerType': _selectedOwnerType,
+        'negotiablePrice': _negotiablePrice,
+        'parkingAvailable': _parkingAvailable,
+        'balconyAvailable': _balconyAvailable,
+        'urgentSale': _urgentSale,
+        'maintenanceCharges':
+            double.tryParse(_maintenanceChargesController.text) ?? 0,
+        'depositAmount': double.tryParse(_depositAmountController.text) ?? 0,
+        'floorNumber': int.tryParse(_floorNumberController.text) ?? 0,
+        'totalFloors': int.tryParse(_totalFloorsController.text) ?? 0,
+        'numberOfBalconies':
+            int.tryParse(_numberOfBalconiesController.text) ?? 0,
+        'numberOfParking': int.tryParse(_numberOfParkingController.text) ?? 0,
+        'contactPersonName': _contactPersonNameController.text.trim(),
+        'description': _descriptionController.text.trim(),
       };
 
       widget.onPropertyAdded(propertyData);
@@ -897,37 +978,6 @@ Widget _buildImageUploadSection() {
     }
   }
 
-  String _formatIndianNumber(String numberStr) {
-    if (numberStr.isEmpty) return '';
-
-    try {
-      int number = int.parse(numberStr);
-
-      if (number >= 10000000) {
-        // 1 crore and above
-        double crores = number / 10000000;
-        return crores == crores.toInt()
-            ? '${crores.toInt()} crore'
-            : '${crores.toStringAsFixed(2)} crore';
-      } else if (number >= 100000) {
-        // 1 lakh and above
-        double lakhs = number / 100000;
-        return lakhs == lakhs.toInt()
-            ? '${lakhs.toInt()} lac'
-            : '${lakhs.toStringAsFixed(2)} lac';
-      } else if (number >= 1000) {
-        // 1 thousand and above
-        double thousands = number / 1000;
-        return thousands == thousands.toInt()
-            ? '${thousands.toInt()} thousand'
-            : '${thousands.toStringAsFixed(2)} thousand';
-      } else {
-        return number.toString();
-      }
-    } catch (e) {
-      return '';
-    }
-  }
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -945,6 +995,7 @@ Widget _buildImageUploadSection() {
         controller: controller,
         keyboardType: keyboardType,
         validator: validator,
+        textCapitalization: TextCapitalization.sentences,
         style: GoogleFonts.poppins(fontSize: 14),
         decoration: InputDecoration(
           labelText: label,
@@ -1427,7 +1478,7 @@ Widget _buildImageUploadSection() {
                                 padding: const EdgeInsets.only(
                                     left: 12.0, bottom: 4),
                                 child: Text(
-                                  _formatIndianNumber(_priceController.text),
+                                  Inr.formatIndianNumber(_priceController.text),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey[600],
@@ -1441,19 +1492,278 @@ Widget _buildImageUploadSection() {
                               hint: '25000',
                               keyboardType: TextInputType.number,
                             ),
+                              if (_rentAmountController.text.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    left: 12.0, bottom: 4),
+                                child: Text(
+                                 Inr.formatIndianNumber(_rentAmountController.text),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ), 
+                            // Purpose dropdown
+                            _buildDropdownField(
+                              label: 'Purpose *',
+                              value: _selectedPurpose,
+                              items: _purposeOptions,
+                              onChanged: (value) => setState(() {
+                                _selectedPurpose = value!;
+                                _forRent = value == 'For Rent';
+                              }),
+                            ),
+
+                            // Property Status dropdown
+                            _buildDropdownField(
+                              label: 'Property Status',
+                              value: _selectedPropertyStatus,
+                              items: _propertyStatusOptions,
+                              onChanged: (value) => setState(
+                                  () => _selectedPropertyStatus = value!),
+                            ),
+
+                            // Urgent Sale toggle
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.priority_high,
+                                      size: 20, color: Colors.red),
+                                  const SizedBox(width: 8),
+                                  Text('Urgent Sale',
+                                      style: GoogleFonts.poppins(fontSize: 14)),
+                                  const Spacer(),
+                                  Switch(
+                                    value: _urgentSale,
+                                    onChanged: (value) =>
+                                        setState(() => _urgentSale = value),
+                                    activeColor: Colors.red,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Negotiable Price toggle
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.handshake, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text('Negotiable Price',
+                                      style: GoogleFonts.poppins(fontSize: 14)),
+                                  const Spacer(),
+                                  Switch(
+                                    value: _negotiablePrice,
+                                    onChanged: (value) => setState(
+                                        () => _negotiablePrice = value),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Maintenance Charges
+                            _buildTextField(
+                              controller: _maintenanceChargesController,
+                              label: 'Maintenance Charges (₹/month)',
+                              hint: '2500',
+                              
+                              prefixIcon: Icons.build,
+                            ),
+
+                            // Deposit Amount (show only for rentals)
+                            if (_selectedPurpose == 'For Rent')
+                              _buildTextField(
+                                controller: _depositAmountController,
+                                label: 'Deposit Amount (₹)',
+                                hint: '50000',
+                                
+                                prefixIcon: Icons.account_balance_wallet,
+                              ),
+
+                            // Floor Number and Total Floors
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: _floorNumberController,
+                                    label: 'Floor Number',
+                                    hint: '3',
+                                    
+                                    prefixIcon: Icons.layers,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: _totalFloorsController,
+                                    label: 'Total Floors',
+                                    hint: '10',
+                                    
+                                    prefixIcon: Icons.business,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Parking Availability
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.local_parking, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text('Parking Available',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 14)),
+                                      const Spacer(),
+                                      Switch(
+                                        value: _parkingAvailable,
+                                        onChanged: (value) => setState(
+                                            () => _parkingAvailable = value),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_parkingAvailable)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: _buildTextField(
+                                        controller: _numberOfParkingController,
+                                        label: 'Number of Parking Spaces',
+                                        hint: '2',
+                                        
+                                        prefixIcon: Icons.directions_car,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+
+                            // Balcony Availability
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.balcony, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text('Balcony Available',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 14)),
+                                      const Spacer(),
+                                      Switch(
+                                        value: _balconyAvailable,
+                                        onChanged: (value) => setState(
+                                            () => _balconyAvailable = value),
+                                      ),
+                                    ],
+                                  ),
+                                  if (_balconyAvailable)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: _buildTextField(
+                                        controller:
+                                            _numberOfBalconiesController,
+                                        label: 'Number of Balconies',
+                                        hint: '1',
+                                        
+                                        prefixIcon: Icons.balcony,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+
+                            // Furnishing Status dropdown
+                            _buildDropdownField(
+                              label: 'Furnishing Status',
+                              value: _selectedFurnishingStatus,
+                              items: _furnishingStatusOptions,
+                              onChanged: (value) => setState(
+                                  () => _selectedFurnishingStatus = value!),
+                            ),
+
+                            // Owner Type dropdown
+                            _buildDropdownField(
+                              label: 'Owner Type',
+                              value: _selectedOwnerType,
+                              items: _ownerTypeOptions,
+                              onChanged: (value) =>
+                                  setState(() => _selectedOwnerType = value!),
+                            ),
+
+                            // Contact Person Name
+                            _buildTextField(
+                              controller: _contactPersonNameController,
+                              label: 'Contact Person Name',
+                              hint: 'Mr. John Doe',
+                              prefixIcon: Icons.person,
+                              validator: (value) => value?.isEmpty == true
+                                  ? 'Contact person name is required'
+                                  : null,
+                            ),
+
+                            // Description
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: TextFormField(
+                                controller: _descriptionController,
+                                maxLines: 4,
+                                maxLength: 500,
+                                style: GoogleFonts.poppins(fontSize: 14),
+                                decoration: InputDecoration(
+                                  labelText: 'Property Description',
+                                  hintText:
+                                      'Describe your property features, nearby amenities, etc.',
+                                  prefixIcon:
+                                      const Icon(Icons.description, size: 20),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide:
+                                        BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide:
+                                        BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 16),
+                                  alignLabelWithHint: true,
+                                ),
+                              ),
+                            ),
 
                             _buildTextField(
                               controller: _waterTaxController,
                               label: 'Water Tax (₹)',
                               hint: '5000',
-                              keyboardType: TextInputType.number,
+                              
                             ),
 
                             _buildTextField(
                               controller: _propertyTaxController,
                               label: 'Property Tax (₹)',
                               hint: '15000',
-                              keyboardType: TextInputType.number,
+                              
                             ),
 
                             _buildTextField(
@@ -1474,30 +1784,28 @@ Widget _buildImageUploadSection() {
                               controller: _groundsController,
                               label: 'Grounds',
                               hint: '2.5',
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
+                            
                             ),
 
                             _buildTextField(
                               controller: _bedroomsController,
                               label: 'Bedrooms',
                               hint: '3',
-                              keyboardType: TextInputType.number,
+                              
                             ),
 
                             _buildTextField(
                               controller: _bathroomsController,
                               label: 'Bathrooms',
                               hint: '3',
-                              keyboardType: TextInputType.number,
+                              
                             ),
 
                             _buildTextField(
                               controller: _ageYearsController,
                               label: 'How old is the property? (years)',
                               hint: '2',
-                              keyboardType: TextInputType.number,
+                              
                             ),
 
                             // Multiple Phone Numbers

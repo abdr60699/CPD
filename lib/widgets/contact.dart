@@ -20,65 +20,20 @@ class ContactUsPage extends StatelessWidget {
               height: 250,
               width: double.infinity,
               decoration: const BoxDecoration(
+                color: Color.fromARGB(255, 255, 240, 210),
                 image: DecorationImage(
                   image: NetworkImage(
-                    'https://images.unsplash.com/photo-1690900257842-f78779d310cd?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZW1wdHklMjBsYW5kJTIwcGljdHVyZXMlMjBmb3IlMjBidWlsZGluZyUyMGluJTIwaW5kaWF8ZW58MHx8MHx8fDA%3D',
+                    'https://raw.githubusercontent.com/abdr60699/CPD/master/contact.png',
                   ),
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),
               ),
               child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.1),
-                      Colors.black.withOpacity(0.7),
-                    ],
-                  ),
-                ),
-                child: Center(
+                decoration: const BoxDecoration(),
+                child: const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FadeInDown(
-                        delay: const Duration(milliseconds: 300),
-                        child: Text(
-                          'Get in Touch',
-                          style: GoogleFonts.playfairDisplay(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 500),
-                        child: Container(
-                          width: 80,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      FadeInUp(
-                        delay: const Duration(milliseconds: 700),
-                        child: Text(
-                          "We're Here to Help You",
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
+                    children: [],
                   ),
                 ),
               ),
@@ -152,26 +107,6 @@ class ContactUsPage extends StatelessWidget {
             const SizedBox(height: 20),
             _buildContactInfo(context, Icons.email, 'Email Address',
                 'checkdreamproperties@gmail.com'),
-            // const SizedBox(height: 20),
-            // // _buildContactInfo(context, Icons.access_time, 'Working Hours',
-            // //     'Mon - Sat: 9:00 AM - 7:00 PM\nSunday: Closed'),
-            // const SizedBox(height: 30),
-            // Text('Follow Us',
-            //     style: GoogleFonts.poppins(
-            //         fontSize: 18, fontWeight: FontWeight.bold)),
-            // const SizedBox(height: 15),
-            // Row(
-            //   children: [
-            //     _buildSocialIcon(FontAwesomeIcons.facebook, Colors.blue),
-            //     const SizedBox(width: 10),
-            //     _buildSocialIcon(FontAwesomeIcons.twitter, Colors.lightBlue),
-            //     const SizedBox(width: 10),
-            //     _buildSocialIcon(FontAwesomeIcons.instagram, Colors.purple),
-            //     const SizedBox(width: 10),
-            //     _buildSocialIcon(
-            //         FontAwesomeIcons.linkedin, Colors.blueAccent),
-            //   ],
-            // ),
           ],
         ),
       ),
@@ -307,17 +242,6 @@ class ContactUsPage extends StatelessWidget {
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         prefixIcon: Icon(icon),
-      ),
-    );
-  }
-
-  Widget _buildSocialIcon(IconData icon, Color color) {
-    return InkWell(
-      onTap: () {},
-      child: CircleAvatar(
-        backgroundColor: color.withOpacity(0.1),
-        radius: 20,
-        child: FaIcon(icon, color: color, size: 18),
       ),
     );
   }

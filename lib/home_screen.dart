@@ -48,6 +48,396 @@ class _HomePageState extends State<HomePage> {
     _loadProperties();
   }
 
+
+List<Map<String, dynamic>> get filteredProperties {
+
+  
+  List<Map<String, dynamic>> filtered = List.from(_properties);
+
+  // Debug: Print each property's structure
+  for (int i = 0; i < _properties.length; i++) {
+    final property = _properties[i];
+    print('\n📋 Property ${i + 1} (ID: ${property['id']}):');
+    
+    // Check if it's nested structure
+    if (property.containsKey('property_data') && property['property_data'] is Map) {
+      final propertyData = property['property_data'] as Map<String, dynamic>;
+      print('  📦 Has nested property_data');
+      print('  🏠 Title: ${propertyData['title']}');
+      print('  🏙️ City: ${propertyData['city']}');
+      print('  📍 Location: ${propertyData['location']}');
+      print('  🏠 Type: ${propertyData['type']}');
+      print('  💰 Price: ${propertyData['price']}');
+      print('  🏠 For Rent: ${propertyData['forRent']}');
+      print('  💰 Rent Amount: ${propertyData['rentAmount']}');
+      print('  📅 Purpose: ${propertyData['purpose']}');
+    } else {
+      print('  📦 Flat structure (no property_data)');
+      print('  🏠 Title: ${property['title']}');
+      print('  🏙️ City: ${property['city']}');
+      print('  📍 Location: ${property['location']}');
+      print('  🏠 Type: ${property['type']}');
+      print('  💰 Price: ${property['price']}');
+      print('  🏠 For Rent: ${property['forRent']}');
+    }
+  }
+
+  // Apply search filter - search across multiple fields
+  if (_searchController.text.isNotEmpty) {
+    print('\n🔎 Applying search filter...');
+    final searchTerm = _searchController.text.toLowerCase();
+    final beforeSearch = filtered.length;
+    
+    filtered = filtered.where((property) {
+      Map<String, dynamic> propertyData = property;
+      if (property.containsKey('property_data') && property['property_data'] is Map) {
+        propertyData = property['property_data'] as Map<String, dynamic>;
+      }
+      
+      final title = (propertyData['title'] ?? '').toString().toLowerCase();
+      final city = (propertyData['city'] ?? '').toString().toLowerCase();
+      final location = (propertyData['location'] ?? '').toString().toLowerCase();
+      final landmarks = (propertyData['landmarks'] as List<dynamic>? ?? [])
+          .map((l) => l.toString().toLowerCase())
+          .join(' ');
+
+      final matches = title.contains(searchTerm) ||
+          city.contains(searchTerm) ||
+          location.contains(searchTerm) ||
+          landmarks.contains(searchTerm);
+      
+      if (!matches) {
+        print('  ❌ Property ${property['id']} filtered out by search');
+      }
+      
+      return matches;
+    }).toList();
+    
+    print('  📊 After search filter: $beforeSearch -> ${filtered.length}');
+  }
+
+  // Apply location filter
+  if (_selectedLocations.isNotEmpty && !_selectedLocations.contains('All Locations')) {
+    print('\n📍 Applying location filter...');
+    final beforeLocation = filtered.length;
+    
+    filtered = filtered.where((property) {
+      Map<String, dynamic> propertyData = property;
+      if (property.containsKey('property_data') && property['property_data'] is Map) {
+        propertyData = property['property_data'] as Map<String, dynamic>;
+      }
+      
+      final city = propertyData['city']?.toString() ?? '';
+      final location = propertyData['location']?.toString() ?? '';
+
+      final matches = _selectedLocations.any((selectedLocation) =>
+          selectedLocation == city ||
+          selectedLocation == location ||
+          selectedLocation == '$location, $city');
+      
+      if (!matches) {
+        print('  ❌ Property ${property['id']} filtered out by location (city: $city, location: $location)');
+      }
+      
+      return matches;
+    }).toList();
+    
+    print('  📊 After location filter: $beforeLocation -> ${filtered.length}');
+  }
+
+  // Apply city filter
+  if (_selectedCities.isNotEmpty) {
+    print('\n🏙️ Applying city filter...');
+    final beforeCity = filtered.length;
+    
+    filtered = filtered.where((property) {
+      Map<String, dynamic> propertyData = property;
+      if (property.containsKey('property_data') && property['property_data'] is Map) {
+        propertyData = property['property_data'] as Map<String, dynamic>;
+      }
+      
+      final city = propertyData['city']?.toString() ?? '';
+      final matches = _selectedCities.contains(city);
+      
+      if (!matches) {
+        print('  ❌ Property ${property['id']} filtered out by city filter (city: $city)');
+      }
+      
+      return matches;
+    }).toList();
+    
+    print('  📊 After city filter: $beforeCity -> ${filtered.length}');
+  }
+
+  // Apply property type filter
+  if (_selectedPropertyType != 'All Properties') {
+    print('\n🏠 Applying property type filter ($_selectedPropertyType)...');
+    final beforeType = filtered.length;
+    
+    if (_selectedPropertyType == 'Buy') {
+      filtered = filtered.where((property) {
+        Map<String, dynamic> propertyData = property;
+        if (property.containsKey('property_data') && property['property_data'] is Map) {
+          propertyData = property['property_data'] as Map<String, dynamic>;
+        }
+        
+        final forRent = propertyData['forRent'];
+        final matches = forRent != true;
+        
+        print('  🏠 Property ${property['id']}: forRent=$forRent, matches Buy filter=$matches');
+        
+        return matches;
+      }).toList();
+    } else if (_selectedPropertyType == 'Rent') {
+      filtered = filtered.where((property) {
+        Map<String, dynamic> propertyData = property;
+        if (property.containsKey('property_data') && property['property_data'] is Map) {
+          propertyData = property['property_data'] as Map<String, dynamic>;
+        }
+        
+        final forRent = propertyData['forRent'];
+        final matches = forRent == true;
+        
+        print('  🏠 Property ${property['id']}: forRent=$forRent, matches Rent filter=$matches');
+        
+        return matches;
+      }).toList();
+    } else if (_selectedPropertyType == 'New Project') {
+      filtered = filtered.where((property) {
+        final matches = _isNewProject(property);
+        print('  🏠 Property ${property['id']}: matches New Project filter=$matches');
+        return matches;
+      }).toList();
+    }
+    
+    print('  📊 After property type filter: $beforeType -> ${filtered.length}');
+  }
+
+  // Apply price filter
+  print('\n💰 Applying price filter...');
+  final beforePrice = filtered.length;
+  
+  filtered = filtered.where((property) {
+    Map<String, dynamic> propertyData = property;
+    if (property.containsKey('property_data') && property['property_data'] is Map) {
+      propertyData = property['property_data'] as Map<String, dynamic>;
+    }
+    
+    final forRent = propertyData['forRent'] == true;
+    final price = forRent
+        ? (propertyData['rentAmount'] ?? 0)
+        : (propertyData['price'] ?? 0);
+    
+    final matches = price >= _priceRange.start && price <= _priceRange.end;
+    
+    print('  💰 Property ${property['id']}: forRent=$forRent, price=$price, range=${_priceRange.start}-${_priceRange.end}, matches=$matches');
+    
+    return matches;
+  }).toList();
+  
+  
+  return filtered;
+}
+
+// Also add debug to your _isNewProject method
+bool _isNewProject(Map<String, dynamic> property) {
+  print('\n🆕 Checking if property ${property['id']} is new project...');
+  
+  try {
+    // Check the root level created_at first
+    final createdDate = property['createdDate'] ??
+        property['created_at'] ??
+        property['dateCreated'];
+    
+    print('  📅 Root level date fields: createdDate=${property['createdDate']}, created_at=${property['created_at']}, dateCreated=${property['dateCreated']}');
+    
+    if (createdDate == null) {
+      // If no date at root level, check inside property_data
+      if (property.containsKey('property_data') && property['property_data'] is Map) {
+        final propertyData = property['property_data'] as Map<String, dynamic>;
+        final nestedCreatedDate = propertyData['createdDate'] ??
+            propertyData['created_at'] ??
+            propertyData['dateCreated'];
+        
+        print('  📅 Nested date fields: createdDate=${propertyData['createdDate']}, created_at=${propertyData['created_at']}, dateCreated=${propertyData['dateCreated']}');
+        
+        if (nestedCreatedDate == null) {
+          print('  ❌ No date found in nested data');
+          return false;
+        }
+        
+        DateTime propertyDate;
+        if (nestedCreatedDate is String) {
+          propertyDate = DateTime.parse(nestedCreatedDate);
+        } else if (nestedCreatedDate is DateTime) {
+          propertyDate = nestedCreatedDate;
+        } else {
+          print('  ❌ Invalid date format in nested data');
+          return false;
+        }
+
+        final now = DateTime.now();
+        final oneMonthAgo = now.subtract(const Duration(days: 30));
+        final isNew = propertyDate.isAfter(oneMonthAgo);
+        
+        print('  📅 Property date: $propertyDate, One month ago: $oneMonthAgo, Is new: $isNew');
+        return isNew;
+      }
+      print('  ❌ No date found at root or nested level');
+      return false;
+    }
+
+    DateTime propertyDate;
+    if (createdDate is String) {
+      propertyDate = DateTime.parse(createdDate);
+    } else if (createdDate is DateTime) {
+      propertyDate = createdDate;
+    } else {
+      print('  ❌ Invalid date format at root level');
+      return false;
+    }
+
+    final now = DateTime.now();
+    final oneMonthAgo = now.subtract(const Duration(days: 30));
+    final isNew = propertyDate.isAfter(oneMonthAgo);
+    
+    print('  📅 Property date: $propertyDate, One month ago: $oneMonthAgo, Is new: $isNew');
+    return isNew;
+  } catch (e) {
+    print('  ❌ Error parsing date for property: $e');
+    return false;
+  }
+}
+
+// Also add this debug method to your _loadProperties
+Future<void> _loadProperties() async {
+  print('🔄 Loading properties...');
+  setState(() => _isLoading = true);
+  
+  try {
+    final properties = await _propertyService.fetchProperties();
+    print('📦 Total properties fetched: ${properties.length}');
+    
+    // Debug: Print raw data structure
+    for (int i = 0; i < properties.length; i++) {
+      final property = properties[i];
+      print('\n📋 Raw Property ${i + 1}:');
+      print('  🆔 ID: ${property['id']}');
+      print('  📅 created_at: ${property['created_at']}');
+      print('  🔍 Keys: ${property.keys.toList()}');
+      
+      if (property.containsKey('property_data')) {
+        print('  📦 property_data keys: ${(property['property_data'] as Map).keys.toList()}');
+      }
+    }
+
+    // Extract unique cities and locations
+    final uniqueCities = <String>{};
+    final uniqueLocations = <String>{};
+    
+    for (var property in properties) {
+      Map<String, dynamic> propertyData = property;
+      if (property.containsKey('property_data') && property['property_data'] is Map) {
+        propertyData = property['property_data'] as Map<String, dynamic>;
+      }
+      
+      final city = propertyData['city']?.toString().trim() ?? '';
+      if (city.isNotEmpty && city != 'N/A') {
+        uniqueCities.add(city);
+      }
+      
+      final location = propertyData['location']?.toString().trim() ?? '';
+      if (location.isNotEmpty && location != 'N/A' && location != 'No location') {
+        uniqueLocations.add(location);
+      }
+    }
+
+    setState(() {
+      _properties.clear();
+      _properties.addAll(properties);
+      _cities = uniqueCities.toList()..sort();
+      final allLocations = <String>{'All Locations'};
+      allLocations.addAll(uniqueLocations);
+      _locations = allLocations.toList()..sort();
+    });
+    
+
+    
+  } catch (e) {
+    print('❌ Error loading properties: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading properties: $e')),
+      );
+    }
+  } finally {
+    setState(() => _isLoading = false);
+  }
+}
+////.....................................
+  // Update your filteredProperties getter in HomePage to handle nested data structure
+
+
+// Update your _getAreaSuggestions method to handle nested structure
+List<String> _getAreaSuggestions(String query) {
+  if (query.isEmpty) return [];
+
+  // Get all unique locations and landmarks from API data
+  Set<String> allSearchableItems = {};
+
+  for (var property in _properties) {
+    // Handle both flat and nested structure
+    Map<String, dynamic> propertyData = property;
+    if (property.containsKey('property_data') && property['property_data'] is Map) {
+      propertyData = property['property_data'] as Map<String, dynamic>;
+    }
+    
+    // Add city
+    final city = propertyData['city']?.toString().trim() ?? '';
+    if (city.isNotEmpty && city != 'N/A') {
+      allSearchableItems.add(city);
+    }
+
+    // Add location/area
+    final location = propertyData['location']?.toString().trim() ?? '';
+    if (location.isNotEmpty &&
+        location != 'N/A' &&
+        location != 'No location') {
+      allSearchableItems.add(location);
+      // Only add formatted version if city is different from location
+      if (city.isNotEmpty && city != 'N/A' && city != location) {
+        allSearchableItems.add('$location, $city');
+      }
+    }
+
+    // Add landmarks
+    final landmarks = propertyData['landmarks'] as List<dynamic>? ?? [];
+    for (var landmark in landmarks) {
+      final landmarkStr = landmark.toString().trim();
+      if (landmarkStr.isNotEmpty && landmarkStr != 'N/A') {
+        allSearchableItems.add(landmarkStr);
+        // Only add formatted version if city is different from landmark
+        if (city.isNotEmpty && city != 'N/A' && city != landmarkStr) {
+          allSearchableItems.add('$landmarkStr, $city');
+        }
+      }
+    }
+
+    // Add title keywords (property names)
+    final title = propertyData['title']?.toString().trim() ?? '';
+    if (title.isNotEmpty && title != 'No title') {
+      allSearchableItems.add(title);
+    }
+  }
+
+  // Filter based on query and remove duplicates
+  return allSearchableItems
+      .where((item) => item.toLowerCase().contains(query.toLowerCase()))
+      .toSet() // Remove duplicates
+      .toList()
+    ..sort();
+}
+
   // Initialize with default value
 
   Future<void> _addProperty(Map<String, dynamic> propertyData) async {
@@ -78,158 +468,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  bool _isNewProject(Map<String, dynamic> property) {
-    try {
-      final createdDate = property['createdDate'] ??
-          property['created_at'] ??
-          property['dateCreated'];
-      if (createdDate == null) return false;
 
-      DateTime propertyDate;
-      if (createdDate is String) {
-        propertyDate = DateTime.parse(createdDate);
-      } else if (createdDate is DateTime) {
-        propertyDate = createdDate;
-      } else {
-        return false;
-      }
-
-      final now = DateTime.now();
-      final oneMonthAgo = now.subtract(const Duration(days: 30));
-
-      return propertyDate.isAfter(oneMonthAgo);
-    } catch (e) {
-      print('Error parsing date for property: $e');
-      return false;
-    }
-  }
-
-// 6. Update the filteredProperties getter to handle search better and new projects
-  List<Map<String, dynamic>> get filteredProperties {
-    List<Map<String, dynamic>> filtered = List.from(_properties);
-
-    // Apply search filter - search across multiple fields
-    if (_searchController.text.isNotEmpty) {
-      final searchTerm = _searchController.text.toLowerCase();
-      filtered = filtered.where((property) {
-        final title = (property['title'] ?? '').toString().toLowerCase();
-        final city = (property['city'] ?? '').toString().toLowerCase();
-        final location = (property['location'] ?? '').toString().toLowerCase();
-        final landmarks = (property['landmarks'] as List<dynamic>? ?? [])
-            .map((l) => l.toString().toLowerCase())
-            .join(' ');
-
-        return title.contains(searchTerm) ||
-            city.contains(searchTerm) ||
-            location.contains(searchTerm) ||
-            landmarks.contains(searchTerm);
-      }).toList();
-    }
-
-    // Apply location filter - check both city and location fields (remove duplicates)
-    if (_selectedLocations.isNotEmpty &&
-        !_selectedLocations.contains('All Locations')) {
-      filtered = filtered.where((property) {
-        final city = property['city']?.toString() ?? '';
-        final location = property['location']?.toString() ?? '';
-
-        return _selectedLocations.any((selectedLocation) =>
-            selectedLocation == city ||
-            selectedLocation == location ||
-            selectedLocation == '$location, $city');
-      }).toList();
-    }
-
-    // Apply city filter
-    if (_selectedCities.isNotEmpty) {
-      filtered = filtered.where((property) {
-        final city = property['city']?.toString() ?? '';
-        return _selectedCities.contains(city);
-      }).toList();
-    }
-
-    // Apply property type filter (UPDATED for Buy, Rent, New Project)
-    if (_selectedPropertyType != 'All Properties') {
-      if (_selectedPropertyType == 'Buy') {
-        filtered = filtered.where((property) {
-          return property['forRent'] != true; // Not for rent means for sale/buy
-        }).toList();
-      } else if (_selectedPropertyType == 'Rent') {
-        filtered = filtered.where((property) {
-          return property['forRent'] == true;
-        }).toList();
-      } else if (_selectedPropertyType == 'New Project') {
-        filtered = filtered.where((property) {
-          return _isNewProject(property);
-        }).toList();
-      }
-    }
-
-    // Apply price filter
-    filtered = filtered.where((property) {
-      final price = property['forRent'] == true
-          ? (property['rentAmount'] ?? 0)
-          : (property['price'] ?? 0);
-      return price >= _priceRange.start && price <= _priceRange.end;
-    }).toList();
-
-    print(
-        'Filtered properties count: ${filtered.length} out of ${_properties.length}');
-    return filtered;
-  }
-
-  List<String> _getAreaSuggestions(String query) {
-    if (query.isEmpty) return [];
-
-    // Get all unique locations and landmarks from API data
-    Set<String> allSearchableItems = {};
-
-    for (var property in _properties) {
-      // Add city
-      final city = property['city']?.toString().trim() ?? '';
-      if (city.isNotEmpty && city != 'N/A') {
-        allSearchableItems.add(city);
-      }
-
-      // Add location/area
-      final location = property['location']?.toString().trim() ?? '';
-      if (location.isNotEmpty &&
-          location != 'N/A' &&
-          location != 'No location') {
-        allSearchableItems.add(location);
-        // Only add formatted version if city is different from location
-        if (city.isNotEmpty && city != 'N/A' && city != location) {
-          allSearchableItems.add('$location, $city');
-        }
-      }
-
-      // Add landmarks
-      final landmarks = property['landmarks'] as List<dynamic>? ?? [];
-      for (var landmark in landmarks) {
-        final landmarkStr = landmark.toString().trim();
-        if (landmarkStr.isNotEmpty && landmarkStr != 'N/A') {
-          allSearchableItems.add(landmarkStr);
-          // Only add formatted version if city is different from landmark
-          if (city.isNotEmpty && city != 'N/A' && city != landmarkStr) {
-            allSearchableItems.add('$landmarkStr, $city');
-          }
-        }
-      }
-
-      // Add title keywords (property names)
-      final title = property['title']?.toString().trim() ?? '';
-      if (title.isNotEmpty && title != 'No title') {
-        allSearchableItems.add(title);
-      }
-    }
-
-    // Filter based on query and remove duplicates
-    return allSearchableItems
-        .where((item) => item.toLowerCase().contains(query.toLowerCase()))
-        .toSet() // Remove duplicates
-        .toList()
-      ..sort();
-  }
 
   // Helper method to show snackbars
   void _showSnackBar(String message) {
@@ -1441,53 +1680,53 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _loadProperties() async {
-    setState(() => _isLoading = true);
-    try {
-      final properties = await _propertyService.fetchProperties();
-      print('Total properties fetched: ${properties.length}');
+  // Future<void> _loadProperties() async {
+  //   setState(() => _isLoading = true);
+  //   try {
+  //     final properties = await _propertyService.fetchProperties();
+  //     print('Total properties fetched: ${properties.length}');
 
-      // Extract unique cities from properties
-      final uniqueCities = properties
-          .map((p) => p['city']?.toString().trim() ?? '')
-          .where((city) => city.isNotEmpty && city != 'N/A')
-          .toSet()
-          .toList()
-        ..sort();
+  //     // Extract unique cities from properties
+  //     final uniqueCities = properties
+  //         .map((p) => p['city']?.toString().trim() ?? '')
+  //         .where((city) => city.isNotEmpty && city != 'N/A')
+  //         .toSet()
+  //         .toList()
+  //       ..sort();
 
-      // Extract unique locations/areas from properties (remove duplicates)
-      final uniqueLocations = properties
-          .map((p) => p['location']?.toString().trim() ?? '')
-          .where((location) =>
-              location.isNotEmpty &&
-              location != 'N/A' &&
-              location != 'No location')
-          .toSet()
-          .toList()
-        ..sort();
+  //     // Extract unique locations/areas from properties (remove duplicates)
+  //     final uniqueLocations = properties
+  //         .map((p) => p['location']?.toString().trim() ?? '')
+  //         .where((location) =>
+  //             location.isNotEmpty &&
+  //             location != 'N/A' &&
+  //             location != 'No location')
+  //         .toSet()
+  //         .toList()
+  //       ..sort();
 
-      setState(() {
-        _properties.clear();
-        _properties.addAll(properties);
+  //     setState(() {
+  //       _properties.clear();
+  //       _properties.addAll(properties);
 
-        // Set cities list
-        _cities = uniqueCities;
+  //       // Set cities list
+  //       _cities = uniqueCities;
 
-        // Set locations list (remove duplicates)
-        final allLocations = <String>{'All Locations'};
-        allLocations.addAll(uniqueLocations);
-        _locations = allLocations.toList()..sort();
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading properties: $e')),
-        );
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
+  //       // Set locations list (remove duplicates)
+  //       final allLocations = <String>{'All Locations'};
+  //       allLocations.addAll(uniqueLocations);
+  //       _locations = allLocations.toList()..sort();
+  //     });
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Error loading properties: $e')),
+  //       );
+  //     }
+  //   } finally {
+  //     setState(() => _isLoading = false);
+  //   }
+  // }
 
   Widget _buildFeaturedProperties() {
     if (_isLoading && _properties.isEmpty) {
