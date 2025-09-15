@@ -2,6 +2,7 @@ import 'package:checkdreamproperty/analytics_data_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'utils/web_utils.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 PreferredSizeWidget buildResponsiveAppBar(
     BuildContext context, int selectedIndex, Function(int) onItemSelected) {
@@ -11,7 +12,7 @@ PreferredSizeWidget buildResponsiveAppBar(
     surfaceTintColor: Colors.transparent,
     backgroundColor: Colors.white,
     elevation: 4,
-    actions: !isMobile
+    actions: kIsWeb
         ? null
         : [
             IconButton(
@@ -64,21 +65,44 @@ PreferredSizeWidget buildResponsiveAppBar(
               height: 50,
               child: ClipOval(
                 child: Image.network(
-                  "https://raw.githubusercontent.com/abdr60699/CPD/e8f1fe2d19cb7633020de7476723acc895eca6de/ChatGPT%20Image%20Jun%2021%2C%202025%2C%2002_03_46%20PM.png",
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.error, color: Colors.red),
-                ),
+  "https://raw.githubusercontent.com/abdr60699/CPD/e8f1fe2d19cb7633020de7476723acc895eca6de/ChatGPT%20Image%20Jun%2021%2C%202025%2C%2002_03_46%20PM.png",
+  fit: BoxFit.cover,
+  loadingBuilder: (context, child, loadingProgress) {
+    if (loadingProgress == null) return child;
+    return Center(
+      child: SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: Colors.orange, // Same theme color as Hero section
+          value: loadingProgress.expectedTotalBytes != null
+              ? loadingProgress.cumulativeBytesLoaded /
+                  (loadingProgress.expectedTotalBytes ?? 1)
+              : null,
+        ),
+      ),
+    );
+  },
+  errorBuilder: (context, error, stackTrace) =>
+      const Icon(Icons.error, color: Colors.red, size: 20),
+),
+                // child: Image.network(
+                //   "https://raw.githubusercontent.com/abdr60699/CPD/e8f1fe2d19cb7633020de7476723acc895eca6de/ChatGPT%20Image%20Jun%2021%2C%202025%2C%2002_03_46%20PM.png",
+                //   fit: BoxFit.cover,
+                //   loadingBuilder: (context, child, loadingProgress) {
+                //     if (loadingProgress == null) return child;
+                //     return const Center(
+                //       child: SizedBox(
+                //         width: 18,
+                //         height: 18,
+                //         child: CircularProgressIndicator(strokeWidth: 2),
+                //       ),
+                //     );
+                //   },
+                //   errorBuilder: (context, error, stackTrace) =>
+                //       const Icon(Icons.error, color: Colors.red),
+                // ),
               ),
             ),
           ),

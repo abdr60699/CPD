@@ -15,30 +15,61 @@ class ContactUsPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hero Section
-          FadeIn(
-            child: Container(
-              height: 250,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color.fromARGB(255, 255, 240, 210),
-                image: DecorationImage(
-                  image: NetworkImage(
-                    'https://raw.githubusercontent.com/abdr60699/CPD/master/contact.png',
-                  ),
-                  fit: BoxFit.contain,
-                ),
-              ),
-              child: Container(
-                decoration: const BoxDecoration(),
-                child: const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [],
-                  ),
-                ),
-              ),
+          // FadeIn(
+          //   child: Container(
+          //     height: 250,
+          //     width: double.infinity,
+          //     decoration: const BoxDecoration(
+          //       color: Color.fromARGB(255, 255, 214, 184),
+          //       image: DecorationImage(
+          //         image: NetworkImage(
+          //           'https://raw.githubusercontent.com/abdr60699/CPD/master/orange.png',
+          //         ),
+          //         fit: BoxFit.contain,
+          //       ),
+          //     ),
+          //     child: Container(
+          //       decoration: const BoxDecoration(),
+          //       child: const Center(
+          //         child: Column(
+          //           mainAxisAlignment: MainAxisAlignment.center,
+          //           children: [],
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
+        FadeIn(
+  child: Container(
+    height: 250,
+    width: double.infinity,
+    color: const Color.fromARGB(255, 255, 214, 184),
+    child: Center(
+      child: Image.network(
+        'https://raw.githubusercontent.com/abdr60699/CPD/master/orange.png',
+        fit: BoxFit.contain,
+        loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+          if (loadingProgress == null) {
+            return child; // Image loaded
+          }
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      (loadingProgress.expectedTotalBytes ?? 1)
+                  : null,
+              color: Colors.orange,
             ),
-          ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.error, color: Colors.red, size: 50);
+        },
+      ),
+    ),
+  ),
+),
+
 
           // Contact Information and Form
           Padding(

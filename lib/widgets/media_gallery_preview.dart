@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -25,10 +26,17 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
   int _currentIndex = 0;
   final Map<int, YoutubePlayerController> _youtubeControllers = {};
 
+  // Track rotation for each media item
+  final Map<int, double> _rotationAngles = {};
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    // Initialize rotation angles to 0 for all items
+    for (int i = 0; i < widget.mediaUrls.length; i++) {
+      _rotationAngles[i] = 0.0;
+    }
   }
 
   @override
@@ -42,6 +50,66 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
     super.dispose();
   }
 
+  // Rotate current media item by 90 degrees (smart rotation - counterclockwise)
+  void _rotateCurrentMedia() {
+    setState(() {
+      final currentAngle = _rotationAngles[_currentIndex]!;
+      final currentDegrees = (currentAngle * 180 / math.pi) % 360;
+
+      // Reverse rotation: counterclockwise cycle
+      double newAngle;
+      if (currentDegrees == 0) {
+        newAngle = 3 * math.pi / 2; // 0° -> 270° (rotated left)
+      } else if (currentDegrees == 270) {
+        newAngle = math.pi; // 270° -> 180° (upside down)
+      } else if (currentDegrees == 180) {
+        newAngle = math.pi / 2; // 180° -> 90° (rotated right)
+      } else {
+        newAngle = 0; // 90° -> 0° (back to normal/straight)
+      }
+
+      _rotationAngles[_currentIndex] = newAngle;
+    });
+  }
+
+  // Reset rotation for current media item
+  void _resetRotation() {
+    setState(() {
+      _rotationAngles[_currentIndex] = 0.0;
+    });
+  }
+
+  // Get appropriate rotation icon based on current rotation
+  Widget _getRotationIcon() {
+    final currentAngle = _rotationAngles[_currentIndex]!;
+    final currentDegrees = (currentAngle * 180 / math.pi) % 360;
+
+    if (currentDegrees == 90) {
+      // At 90°, next click will go to 0° (straight)
+      return const Icon(Icons.straighten, color: Colors.white, size: 20);
+    } else {
+      // For 0°, 270°, 180°, show rotate counterclockwise
+      return const Icon(Icons.rotate_90_degrees_ccw,
+          color: Colors.white, size: 20);
+    }
+  }
+
+  // Get appropriate tooltip based on current rotation
+  String _getRotationTooltip() {
+    final currentAngle = _rotationAngles[_currentIndex]!;
+    final currentDegrees = (currentAngle * 180 / math.pi) % 360;
+
+    if (currentDegrees == 0) {
+      return 'Rotate to 270°';
+    } else if (currentDegrees == 270) {
+      return 'Rotate to 180°';
+    } else if (currentDegrees == 180) {
+      return 'Rotate to 90°';
+    } else {
+      return 'Rotate to 0° (straight)';
+    }
+  }
+
   YoutubePlayerController _getYouTubeController(String videoId, int index) {
     if (_youtubeControllers[index] != null) {
       return _youtubeControllers[index]!;
@@ -51,12 +119,12 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
       final controller = YoutubePlayerController(
         initialVideoId: videoId,
         params: const YoutubePlayerParams(
-          autoPlay: true, // Changed to true for better UX
+          autoPlay: true,
           showControls: true,
           showFullscreenButton: true,
-          enableCaption: false, // Disable to reduce loading issues
-          privacyEnhanced: false, // Disable to reduce loading issues
-          playsInline: true, // Keep inline for better mobile experience
+          enableCaption: false,
+          privacyEnhanced: false,
+          playsInline: true,
           mute: false,
           loop: false,
           enableJavaScript: true,
@@ -67,25 +135,19 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
       return controller;
     } catch (e) {
       print('Error creating YouTube controller: $e');
-      rethrow; // Re-throw to be caught by the calling method
+      rethrow;
     }
   }
 
-  // Handle controller cleanup when page changes
   void _onPageChanged(int index) {
     setState(() {
       _currentIndex = index;
     });
-
-    // Don't pause other videos - let user control playback
-    // The previous approach of pausing other videos was causing issues
   }
 
   Future<void> downloadToGallery(String imageUrl, BuildContext context) async {
     try {
-      // Check if we're on mobile
       if (kIsWeb) {
-        // Web download handling
         final response = await http.get(Uri.parse(imageUrl));
         final blob = html.Blob([response.bodyBytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
@@ -97,7 +159,6 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
         return;
       }
 
-      // Mobile platform handling
       final status = await _requestStoragePermission();
       if (!status) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -112,7 +173,6 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
         throw Exception('Failed to download image');
       }
 
-      // Save to gallery
       final result = await ImageGallerySaver.saveImage(
         Uint8List.fromList(response.bodyBytes),
         quality: 100,
@@ -159,7 +219,6 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
       }
     }
 
-    // iOS only needs photos permission
     if (Platform.isIOS) {
       final status = await Permission.photos.request();
       return status.isGranted;
@@ -170,6 +229,9 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
 
   Widget _buildMediaItem(int index) {
     final url = widget.mediaUrls[index];
+    final rotationAngle = _rotationAngles[index] ?? 0.0;
+
+    Widget mediaWidget;
 
     if (YouTubeHelper.isYouTubeUrl(url)) {
       final videoId = YouTubeHelper.extractVideoId(url);
@@ -177,7 +239,7 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
         try {
           final controller = _getYouTubeController(videoId, index);
 
-          return Container(
+          mediaWidget = Container(
             color: Colors.black,
             child: Center(
               child: YoutubePlayerIFrame(
@@ -187,8 +249,7 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
           );
         } catch (e) {
           print('Error creating YouTube player: $e');
-          // Fallback to show thumbnail with external link option
-          return Container(
+          mediaWidget = Container(
             color: Colors.black,
             child: Center(
               child: Column(
@@ -213,7 +274,6 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
                   const SizedBox(height: 8),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // You can add url_launcher here to open in browser
                       print('Open YouTube URL: $url');
                     },
                     icon: const Icon(Icons.open_in_browser),
@@ -229,8 +289,7 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
           );
         }
       } else {
-        // Invalid YouTube URL
-        return const Center(
+        mediaWidget = const Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -246,7 +305,7 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
       }
     } else {
       // Regular image
-      return InteractiveViewer(
+      mediaWidget = InteractiveViewer(
         child: Image.network(
           url,
           fit: BoxFit.contain,
@@ -290,11 +349,20 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
         ),
       );
     }
+
+    // Apply rotation transform
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: Transform.rotate(
+        angle: rotationAngle,
+        child: mediaWidget,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Handle empty media case
     if (widget.mediaUrls.isEmpty) {
       return Dialog(
         backgroundColor: Colors.black,
@@ -340,42 +408,43 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
             itemBuilder: (context, index) => _buildMediaItem(index),
           ),
 
-          // Only show navigation controls if we have more than 1 item
+          // Navigation controls for multiple items
           if (widget.mediaUrls.length > 1) ...[
             // Backward button
             Positioned(
-              left: 10,
-              top: MediaQuery.of(context).size.height / 2 - 24,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios,
-                    color: Colors.white, size: 32),
-                onPressed: () {
-                  if (_currentIndex > 0) {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  }
-                },
-              ),
+              bottom: 40,
+              left: 80,
+              child: TextButton.icon(
+                  icon: const Icon(Icons.arrow_back_ios,
+                      color: Colors.white, size: 32),
+                  onPressed: () {
+                    if (_currentIndex > 0) {
+                      _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  label: const Text('Prev')),
             ),
 
             // Forward button
             Positioned(
-              right: 10,
-              top: MediaQuery.of(context).size.height / 2 - 24,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_forward_ios,
-                    color: Colors.white, size: 32),
-                onPressed: () {
-                  if (_currentIndex < widget.mediaUrls.length - 1) {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  }
-                },
-              ),
+              bottom: 40,
+              right: 80,
+              child: TextButton.icon(
+                  icon: const Icon(Icons.arrow_forward_ios,
+                      color: Colors.white, size: 32),
+                  iconAlignment: IconAlignment.end,
+                  onPressed: () {
+                    if (_currentIndex < widget.mediaUrls.length - 1) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  label: const Text('Next')),
             ),
 
             // Page indicator
@@ -397,34 +466,100 @@ class _MediaGalleryPreviewState extends State<MediaGalleryPreview> {
             ),
           ],
 
-          // Close button
+          // Top control bar
           Positioned(
             top: 40,
+            left: 20,
             right: 20,
-            child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 28),
-              onPressed: () => Navigator.of(context).pop(),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Rotation controls
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton.icon(
+                        icon: _getRotationIcon(),
+                        onPressed: _rotateCurrentMedia,
+                        label: const Text('Rotate',
+                            style: TextStyle(color: Colors.white)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.all(8),
+                        ),
+                      ),
+                      if (_rotationAngles[_currentIndex] != 0.0) ...[
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.refresh,
+                              color: Colors.white, size: 18),
+                          onPressed: _resetRotation,
+                          tooltip: 'Reset rotation',
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Close button
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
             ),
           ),
 
-          // Download button for images (only show if current item is not a YouTube video)
-          if (!YouTubeHelper.isYouTubeUrl(widget.mediaUrls[_currentIndex]))
-            Positioned(
-              bottom: 40,
-              right: 20,
-              child: FloatingActionButton(
-                backgroundColor: Colors.black54,
-                onPressed: () =>
-                    downloadToGallery(widget.mediaUrls[_currentIndex], context),
-                child: const Icon(Icons.download, color: Colors.white),
-              ),
+          // Bottom action buttons
+          Positioned(
+            bottom: 40,
+            right: 20,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Download button for images (only show if current item is not a YouTube video)
+                // if (!YouTubeHelper.isYouTubeUrl(widget.mediaUrls[_currentIndex]))
+                //   FloatingActionButton(
+                //     backgroundColor: Colors.black54,
+                //     heroTag: "download",
+                //     onPressed: () =>
+                //         downloadToGallery(widget.mediaUrls[_currentIndex], context),
+                //     child: const Icon(Icons.download, color: Colors.white),
+                //   ),
+
+                // Rotation angle indicator (only show if rotated)
+                if (_rotationAngles[_currentIndex] != 0.0) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${((_rotationAngles[_currentIndex]! * 180 / math.pi) % 360).round()}°',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ],
             ),
+          ),
 
           // Video indicator for YouTube videos
           if (YouTubeHelper.isYouTubeUrl(widget.mediaUrls[_currentIndex]))
             Positioned(
               bottom: 100,
-              right: 20,
+              left: 20,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
